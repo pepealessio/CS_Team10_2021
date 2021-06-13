@@ -2,12 +2,16 @@ package it.unisa.diem.cs.gruppo10;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
+import java.util.ArrayList;
 
 public class MainSimulation {
-    public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InterruptedException {
+    public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InterruptedException, IOException, ClassNotFoundException {
         Security.addProvider(new BouncyCastleProvider());
 
         // Initializate the user as the phase 2.3.1 -------------------------------------------------------------------
@@ -28,6 +32,15 @@ public class MainSimulation {
         // System.out.println(teresa.contacts.size() + alessio.contacts.size() + paolo.contacts.size() + luigi.contacts.size());
 
         // Teresa communicate positivity like figure 1.1 --------------------------------------------------------------
+
+        //////////// REPLACE WITH SSL ////////////////////////////
+        ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("contact_list.server"));
+        ArrayList<byte[]> lis = new ArrayList<>();
+        lis.add(paolo.getId());
+        lis.add(luigi.getId());
+        out.writeObject(lis);
+        out.close();
+        //////////// REPLACE WITH SSL ////////////////////////////
 
         // User attempts for a notify
         teresa.getNotify();

@@ -1,7 +1,5 @@
 package it.unisa.diem.cs.gruppo10;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -104,18 +102,31 @@ public class User implements Serializable {
         return keyPairF;
     }
 
-    public void getNotify()
-    {
+    public void getNotify() throws NoSuchAlgorithmException, IOException, ClassNotFoundException {
+        // Obtain current ID
+        byte[] id = getId();
 
+        // Simulate connect to the MD server to read notify using a file
+        ObjectInputStream in = new ObjectInputStream(new FileInputStream("contact_list.server"));
+        ArrayList<byte[]> id_list = (ArrayList<byte[]>) in.readObject();
+        for (byte[] c: id_list)
+        {
+            if (Arrays.equals(id, c))
+            {
+                System.out.println(name + ": I've received a exposition notify.");
+                return;
+            }
+        }
+        System.out.println(name + ": I'm safe for now.");
     }
 
     private void sendContact(User u2) throws IOException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         // SIMULATE PAIRING ------------------------------------------------------------------
-        // Start u1 soket as pair BT request
+        // Start u1 socket as pair BT request
         Socket clientSocket = new Socket("127.0.0.1", u2.getPort());
         ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
 
-        // Now we simulate contact excange ----------------------------------------------------
+        // Now we simulate contact exchange ----------------------------------------------------
         // User 1 send message to user 2 as (2.6)
         ContactMessage c1to2 = new ContactMessage(keyPairF, u2.getId());
         out.writeObject(c1to2);
@@ -127,15 +138,15 @@ public class User implements Serializable {
 
     private void receiveContact() throws IOException, ClassNotFoundException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         // SIMULATE PAIRING ------------------------------------------------------------------
-        // Start u2 soket as pair BT accepting
+        // Start u2 socket as pair BT accepting
         ServerSocket serverSocket = new ServerSocket(port);
         Socket clientSocket = serverSocket.accept();
         ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
 
-        // Now we simulate contact excange ----------------------------------------------------
-        // Recive from u1
+        // Now we simulate contact exchange ----------------------------------------------------
+        // Receive from u1
         ContactMessage c1to2 = (ContactMessage) in.readObject();
-        if (c1to2.verify(getId())) {
+        if (c1to2.verifyBTPair(getId())) {
             System.out.println(name + ": I've added a contact");
             contacts.add(c1to2);
         } else {
