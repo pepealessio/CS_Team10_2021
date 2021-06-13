@@ -104,6 +104,11 @@ public class User implements Serializable {
         return keyPairF;
     }
 
+    public void getNotify()
+    {
+
+    }
+
     private void sendContact(User u2) throws IOException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         // SIMULATE PAIRING ------------------------------------------------------------------
         // Start u1 soket as pair BT request
@@ -142,25 +147,5 @@ public class User implements Serializable {
         in.close();
         clientSocket.close();
         serverSocket.close();
-    }
-
-    public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InterruptedException {
-        Security.addProvider(new BouncyCastleProvider());
-
-        User teresa = new User(5600, "Teresa");
-        User paolo = new User(5601, "Paolo");
-        User alessio = new User(5602, "Alessio");
-        User luigi = new User(5603, "Luigi");
-
-        System.out.println("Teresa -> Paolo");
-        meet2user(teresa, paolo);
-        System.out.println("Alessio -> Paolo");
-        meet2user(alessio, paolo);
-        System.out.println("Teresa -> Luigi");
-        meet2user(teresa, luigi);
-        System.out.println("Paolo -> Luigi");
-        meet2user(paolo, luigi);
-
-        System.out.println(teresa.contacts.size() + alessio.contacts.size() + paolo.contacts.size() + luigi.contacts.size());
     }
 }
