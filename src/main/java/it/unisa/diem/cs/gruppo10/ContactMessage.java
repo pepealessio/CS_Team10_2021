@@ -44,12 +44,6 @@ public class ContactMessage implements Serializable {
     }
 
     public boolean verify(byte[] id2Byte) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        // verify Timestamp
-/*        long seconds = Duration.between(LocalDateTime.now(), tsNow).toSeconds();
-        if (seconds > 30){
-            return false;
-        }
-*/
         // Verify signature
         byte[] pkfu1Byte = pkfu1.getEncoded();
         byte[] tsNowByte = SerializationUtils.serialize(tsNow);
@@ -64,5 +58,14 @@ public class ContactMessage implements Serializable {
         signature.update(messageToVerifyByte);
 
         return signature.verify(sigBytes);
+    }
+
+    public boolean verifyBTPair(byte[] id2Byte) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
+        // verify Timestamp
+        long seconds = Duration.between(LocalDateTime.now(), tsNow).toSeconds();
+        if (seconds > 30){
+            return false;
+        }
+        return verify(id2Byte);
     }
 }
