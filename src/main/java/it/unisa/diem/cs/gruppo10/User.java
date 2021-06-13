@@ -1,9 +1,13 @@
 package it.unisa.diem.cs.gruppo10;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+
+import javax.net.ssl.*;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.*;
+import java.security.cert.CertificateException;
 import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,18 +39,49 @@ public class User implements Serializable {
      */
     List<ContactMessage> contacts;
 
+
+    /**
+     * The path keystore of the user.
+     */
+    private final String filepathTrustStore;
+
+    /**
+     * The password of the keystore
+     */
+    private final String passwordTrustStore;
+
     /**
      * Initialize an user, generate him PKFU and SKFU and his contact list empty.
      */
-    public User(int port, String name) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
+    public User(int port, String name, String filepathTruststore, String passwordTrustStore) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
         this.port = port;
         this.name = name;
 
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA");
         keyGen.initialize(new ECGenParameterSpec("secp256k1"), new SecureRandom());
         this.keyPairF = keyGen.generateKeyPair();
-
+        //this.userTrustStore = readStore(filepathTruststore, passwordTrustStore);
+        this.filepathTrustStore = filepathTruststore;
+        this.passwordTrustStore = passwordTrustStore;
         this.contacts = new ArrayList<>();
+    }
+
+    // In caso si debba caricare l'intero Keystore
+    private KeyStore readStore(String filepath, String password) {
+        try {
+
+            InputStream stream = new FileInputStream(filepath);
+            KeyStore store = KeyStore.getInstance(KeyStore.getDefaultType());
+            char[] trustStorePassword = password.toCharArray();
+            store.load(stream, trustStorePassword);
+
+            return store;
+        } catch (KeyStoreException | IOException | NoSuchAlgorithmException | CertificateException ex) {
+            //Handle error
+            ex.printStackTrace();
+            return null;
+        }
+
     }
 
     /**
@@ -102,6 +137,34 @@ public class User implements Serializable {
         return keyPairF;
     }
 
+    // Genera un thread che si occupa della comunicazione dei contatti
+    public void communicatePositivity() throws IOException, KeyStoreException, InterruptedException {
+
+        Thread startConnectionwithMD = new Thread(() -> {
+            try {
+                // Creazione Socket
+                SSLSocketFactory sockfact = (SSLSocketFactory) SSLSocketFactory.getDefault();
+                SSLSocket cSock = (SSLSocket) sockfact.createSocket("localhost", 4000);
+
+                cSock.setEnabledCipherSuites(cSock.getSupportedCipherSuites());
+                cSock.setEnabledProtocols(cSock.getSupportedProtocols());
+                // Associazione del Truststore
+                System.setProperty("javax.net.ssl.trustStore", filepathTrustStore);
+                System.setProperty("javax.net.ssl.trustStorePassword", passwordTrustStore);
+
+                System.out.println("Indirizzo: " + cSock.getRemoteSocketAddress());
+                cSock.startHandshake();
+                // Comunicazione positività
+                ObjectOutputStream out = new ObjectOutputStream(cSock.getOutputStream());
+                out.writeObject(contacts);
+                cSock.close();
+            } catch (Exception e) {
+                System.out.println(e);
+            }
+        });
+        startConnectionwithMD.start();
+    }
+
     public void getNotify() throws NoSuchAlgorithmException, IOException, ClassNotFoundException {
         // Obtain current ID
         byte[] id = getId();
@@ -109,10 +172,8 @@ public class User implements Serializable {
         // Simulate connect to the MD server to read notify using a file
         ObjectInputStream in = new ObjectInputStream(new FileInputStream("contact_list.server"));
         ArrayList<byte[]> id_list = (ArrayList<byte[]>) in.readObject();
-        for (byte[] c: id_list)
-        {
-            if (Arrays.equals(id, c))
-            {
+        for (byte[] c : id_list) {
+            if (Arrays.equals(id, c)) {
                 System.out.println(name + ": I've received a exposition notify.");
                 return;
             }
