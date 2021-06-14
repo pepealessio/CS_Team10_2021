@@ -2,48 +2,51 @@ package it.unisa.diem.cs.gruppo10;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 public class MainSimulation {
     public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InterruptedException, IOException, ClassNotFoundException, KeyStoreException, CertificateException, UnrecoverableKeyException, KeyManagementException {
+        // Add crypto Provider
         Security.addProvider(new BouncyCastleProvider());
 
         System.out.println("\n\nSimulate phase 2.1. -----------------------\n");
-        MD md = new MD(4000, 4001, "mdkeystore.jks", "ubuntu","teresaTruststore.jks", "gruppo10");
-        md.receiveContactMd();
-        md.sendContactListMd();
+        MD md = new MD();
         TimeUnit.SECONDS.sleep(1);
 
-        System.out.println("\n\nSimulate phase 2.3.1 -----------------------\n");
-        User teresa = new User(5600, "Teresa", "publictruststore.jks", "ubuntu","teresa.jks", "gruppo10");
-        User paolo = new User(5601, "Paolo", "publictruststore.jks", "ubuntu","teresa.jks", "gruppo10");
-        User alessio = new User(5602, "Alessio","publictruststore.jks", "ubuntu","teresa.jks", "gruppo10");
-        User luigi = new User(5603, "Luigi", "publictruststore.jks", "ubuntu","teresa.jks", "gruppo10");
+        System.out.println("\n\nSimulate phase 2.2. -----------------------\n" +
+                "User Certificate are provided externally.");
+
+        System.out.println("\n\nSimulate phase 2.3.1 -----------------------\n" +
+                "User generate PKf");
+        User teresa = new User("Teresa");
+        User paolo = new User("Paolo");
+        User alessio = new User("Alessio");
+        User luigi = new User("Luigi");
 
         System.out.println("\n\nSimulate phase 2.3.3 -----------------------\n");
-        // Simulate BT contact exchange like figure 1.1 with TCP connection and thread. -------------------------------
-        System.out.println("Teresa -> Paolo");
+        System.out.println("\nTeresa -> Paolo");
         User.meet2user(teresa, paolo);
-        System.out.println("Alessio -> Paolo");
+        System.out.println("\nAlessio -> Paolo");
         User.meet2user(alessio, paolo);
-        System.out.println("Teresa -> Luigi");
+        System.out.println("\nTeresa -> Luigi");
         User.meet2user(teresa, luigi);
-        System.out.println("Paolo -> Luigi");
+        System.out.println("\nPaolo -> Luigi");
         User.meet2user(paolo, luigi);
-        // System.out.println(teresa.contacts.size() + alessio.contacts.size() + paolo.contacts.size() + luigi.contacts.size());
 
-        System.out.println("\n\nSimulate phase 2.4-----------------------\n");
-        // Teresa communicate positivity like figure 1.1 --------------------------------------------------------------
-        teresa.communicatePositivity(md.getPort());
-        TimeUnit.SECONDS.sleep(1);
+        System.out.println("\n\nSimulate phase 2.4-----------------------\n" +
+                "Now teresa communicate positivity");
+        teresa.communicatePositivity();
 
         System.out.println("\n\nSimulate phase 2.5 -----------------------\n");
-        teresa.getNotify(md.getPort2());
-        paolo.getNotify(md.getPort2());
-        alessio.getNotify(md.getPort2());
-        luigi.getNotify(md.getPort2());
+        teresa.getNotify();
+        paolo.getNotify();
+        alessio.getNotify();
+        luigi.getNotify();
     }
 }
