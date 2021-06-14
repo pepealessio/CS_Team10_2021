@@ -75,10 +75,12 @@ public class User implements Serializable {
      * This method use two thread to simulate a contact exchange between two user.
      */
     public static void meet2user(User u1, User u2) throws InterruptedException {
+        System.out.println(u1.name + " -> " + u2.name);
+
         Thread u1tou2 = new Thread(() -> {
             try {
                 u1.receiveContact();
-                TimeUnit.MILLISECONDS.sleep(50);
+                TimeUnit.MILLISECONDS.sleep(100);
                 u1.sendContact(u2);
             } catch (Exception ignored) {
             }
@@ -93,7 +95,7 @@ public class User implements Serializable {
         });
 
         u1tou2.start();
-        TimeUnit.MILLISECONDS.sleep(50);
+        TimeUnit.MILLISECONDS.sleep(100);
         u2tou1.start();
 
         u1tou2.join();

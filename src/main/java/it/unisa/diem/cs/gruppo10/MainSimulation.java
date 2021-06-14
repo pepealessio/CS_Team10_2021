@@ -30,13 +30,9 @@ public class MainSimulation {
         User luigi = new User("Luigi");
 
         System.out.println("\n\nSimulate phase 2.3.3 -----------------------\n");
-        System.out.println("\nTeresa -> Paolo");
         User.meet2user(teresa, paolo);
-        System.out.println("\nAlessio -> Paolo");
         User.meet2user(alessio, paolo);
-        System.out.println("\nTeresa -> Luigi");
         User.meet2user(teresa, luigi);
-        System.out.println("\nPaolo -> Luigi");
         User.meet2user(paolo, luigi);
 
         System.out.println("\n\nSimulate phase 2.4-----------------------\n" +
