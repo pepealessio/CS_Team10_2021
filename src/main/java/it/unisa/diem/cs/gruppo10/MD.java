@@ -69,7 +69,7 @@ public class MD {
                 return;
             }
         }
-        System.out.println("MD : Communicated " + id_list.size() + " new contacts");
+        System.out.println("MD : Communicated " + contactList.size() + " new contacts");
 
         try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("contact_list.server"))) {
             out.writeObject(id_list);
@@ -108,6 +108,9 @@ public class MD {
                 e.printStackTrace();
                 return;
             }
+
+            System.out.println("MD server is now on");
+
             while (true) {
 
                 try {
