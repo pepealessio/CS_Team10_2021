@@ -39,28 +39,12 @@ public class User implements Serializable {
         userProperties = Util.loadProperties("user.properties");
 
         // Read trust store
-        tmf = TrustManagerFactory.getInstance("SunX509");
-        KeyStore ts = KeyStore.getInstance("JKS");
-        char[] passTs = userProperties.getProperty("trustStorePassword").toCharArray();
-        try {
-            ts.load(new FileInputStream(Util.resourcesPath + userProperties.getProperty("trustStoreFile")), passTs);
-        } catch (IOException | CertificateException e) {
-            System.err.println("User trust store not found!");
-            System.exit(1);
-        }
-        tmf.init(ts);
+        tmf = Util.generateTrustStoreManager(Util.resourcesPath + userProperties.getProperty("trustStoreFile"),
+                userProperties.getProperty("trustStorePassword"));
 
         // Read Key Store
-        kmf = KeyManagerFactory.getInstance("SunX509");
-        KeyStore ks = KeyStore.getInstance("JKS");
-        char[] passKs = userProperties.getProperty(name + ".keyStorePassword").toCharArray();
-        try {
-            ks.load(new FileInputStream(Util.resourcesPath + userProperties.getProperty(name + ".keyStoreFile")), passKs);
-        } catch (IOException | CertificateException e) {
-            System.err.println("User key store not found!");
-            System.exit(1);
-        }
-        kmf.init(ks, passKs);
+        kmf = Util.generateKeyStoreManager(Util.resourcesPath + userProperties.getProperty(name +".keyStoreFile"),
+                userProperties.getProperty(name + ".keyStorePassword"));
 
         // Generate PKf
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA");
@@ -183,8 +167,8 @@ public class User implements Serializable {
     private void receiveContact() throws IOException, ClassNotFoundException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         // SIMULATE PAIRING ------------------------------------------------------------------
         // Start u2 socket as pair BT accepting
-        try(ServerSocket serverSocket = new ServerSocket(Integer.parseInt(userProperties.getProperty("BTSimulatePort")))) {
-            try(Socket clientSocket = serverSocket.accept()) {
+        try (ServerSocket serverSocket = new ServerSocket(Integer.parseInt(userProperties.getProperty("BTSimulatePort")))) {
+            try (Socket clientSocket = serverSocket.accept()) {
                 try (ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream())) {
 
                     // Now we simulate contact exchange ----------------------------------------------------

@@ -10,16 +10,20 @@ import java.util.*;
 public class MD {
     private final Properties mdProperties;
     private final ArrayList<byte[]> idContactMessage;
+    private final TrustManagerFactory tmf;
+    private final KeyManagerFactory kmf;
 
-    public MD() {
+    public MD() throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException {
         mdProperties = Util.loadProperties("md.properties");
         idContactMessage = new ArrayList<>();
 
-        System.setProperty("javax.net.ssl.keyStore", Util.resourcesPath + mdProperties.getProperty("keyStoreFile"));
-        System.setProperty("javax.net.ssl.keyStorePassword", mdProperties.getProperty("keyStorePassword"));
-        System.setProperty("javax.net.ssl.trustStore", Util.resourcesPath + mdProperties.getProperty("trustStoreFile"));
-        System.setProperty("javax.net.ssl.trustStorePassword", mdProperties.getProperty("trustStorePassword"));
+        // Read trust store
+        tmf = Util.generateTrustStoreManager(Util.resourcesPath + mdProperties.getProperty("trustStoreFile"),
+                mdProperties.getProperty("trustStorePassword"));
 
+        // Read Key Store
+        kmf = Util.generateKeyStoreManager(Util.resourcesPath + mdProperties.getProperty("keyStoreFile"),
+                mdProperties.getProperty("keyStorePassword"));
         receiveContactMd();
         sendContactListMd();
 
@@ -31,12 +35,13 @@ public class MD {
 
         // Defining a thread to simulate the MD server.
         Thread receiveContactThreadMd = new Thread(() -> {
-            SSLServerSocket sSock;
-
             // Creazione della Socket
-            SSLServerSocketFactory sockFact = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+            SSLContext ctx = null;
             try {
-                sSock = (SSLServerSocket) sockFact.createServerSocket(Integer.parseInt(mdProperties.getProperty("TlsSocketReceiveContacts")));
+                ctx = SSLContext.getInstance("TLS");
+                ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+                SSLServerSocketFactory sockFact = ctx.getServerSocketFactory();
+                SSLServerSocket sSock = (SSLServerSocket) sockFact.createServerSocket(Integer.parseInt(mdProperties.getProperty("TlsSocketReceiveContacts")));
 
                 while (true) {
                     // Attesa Connessione
@@ -49,7 +54,7 @@ public class MD {
                         addContactToContactList(pkfu1, c);
                     }
                 }
-            } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException | SignatureException | InvalidKeyException e) {
+            } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException | SignatureException | InvalidKeyException | KeyManagementException e) {
                 e.printStackTrace();
             }
         });
@@ -65,10 +70,12 @@ public class MD {
             Security.addProvider(new BouncyCastleProvider());
 
             SSLServerSocket sSock;
-
+            SSLContext ctx = null;
             try {
-                SSLServerSocketFactory sockfact = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-                sSock = (SSLServerSocket) sockfact.createServerSocket(Integer.parseInt(mdProperties.getProperty("TlsSocketSendRiskId")));
+                ctx = SSLContext.getInstance("TLS");
+                ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+                SSLServerSocketFactory sockFact = ctx.getServerSocketFactory();
+                sSock = (SSLServerSocket) sockFact.createServerSocket(Integer.parseInt(mdProperties.getProperty("TlsSocketSendRiskId")));
                 sSock.setNeedClientAuth(true);
 
             } catch (Exception e) {
