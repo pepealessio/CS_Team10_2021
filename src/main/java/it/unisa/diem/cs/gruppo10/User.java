@@ -52,11 +52,20 @@ public class User implements Serializable {
      */
     private final String passwordTrustStore;
 
+    /**
+     * The path keystore of the user.
+     */
+    private final String filepathKeyStore;
+
+    /**
+     * The password of the keystore
+     */
+    private final String passwordKeyStore;
 
     /**
      * Initialize an user, generate him PKFU and SKFU and his contact list empty.
      */
-    public User(int port, String name, String filepathTruststore, String passwordTrustStore) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
+    public User(int port, String name, String filepathTruststore, String passwordTrustStore, String filepathKeystore, String passwordKeyStore) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException {
         this.port = port;
         this.name = name;
 
@@ -66,7 +75,8 @@ public class User implements Serializable {
         //this.userTrustStore = readStore(filepathTruststore, passwordTrustStore);
         this.filepathTrustStore = filepathTruststore;
         this.passwordTrustStore = passwordTrustStore;
-
+        this.filepathKeyStore = filepathKeystore;
+        this.passwordKeyStore = passwordKeyStore;
         this.contacts = new ArrayList<>();
     }
 
@@ -185,14 +195,42 @@ public class User implements Serializable {
         });
         startConnectionwithMD.start();
     }
-
-    public void getNotify() throws NoSuchAlgorithmException, IOException, ClassNotFoundException {
+    public void getNotify(int portServer2) throws NoSuchAlgorithmException, IOException, ClassNotFoundException, KeyStoreException, CertificateException, UnrecoverableKeyException, KeyManagementException {
         // Obtain current ID
         byte[] id = getId();
 
         // Simulate connect to the MD server to read notify using a file
-        ObjectInputStream in = new ObjectInputStream(new FileInputStream("contact_list.server"));
+       /* ObjectInputStream in = new ObjectInputStream(new FileInputStream("contact_list.server"));
+        ArrayList<byte[]> id_list = (ArrayList<byte[]>) in.readObject();*/
+        SSLContext ctx = SSLContext.getInstance("TLS");
+
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+        KeyStore ts = KeyStore.getInstance("JKS");
+        char[] passTs = passwordTrustStore.toCharArray();
+        ts.load(new FileInputStream(filepathTrustStore), passTs);
+        tmf.init(ts);
+
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+        KeyStore ks = KeyStore.getInstance("JKS");
+        char[] passKs = passwordKeyStore.toCharArray();
+        ks.load(new FileInputStream(filepathKeyStore), passKs);
+        kmf.init(ks, passKs);
+
+        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+
+        // Creazione Socket
+        SSLSocketFactory factory = ctx.getSocketFactory();
+        SSLSocket cSock = (SSLSocket)factory.createSocket("127.0.0.2", portServer2);
+
+        // Handshake
+        cSock.startHandshake();
+
+        // Comunicazione positività
+        ObjectInputStream in = new ObjectInputStream(cSock.getInputStream());
         ArrayList<byte[]> id_list = (ArrayList<byte[]>) in.readObject();
+        in.close();
+        cSock.close();
+
         for (byte[] c : id_list) {
             if (Arrays.equals(id, c)) {
                 System.out.println(name + ": I've received a exposition notify.");

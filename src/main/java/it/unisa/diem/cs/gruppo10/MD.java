@@ -8,15 +8,21 @@ import java.util.*;
 
 public class MD {
     private final int port;
-
+    private final int port2;
     private final String passwordKeyStore;
     private final String filepathKeyStore;
+    private final String passwordTrustStore;
+    private final String filepathTrustStore;
 
-    public MD(int port, String filepathKeyStore, String passwordKeyStore) {
+    public MD(int port, int port2, String filepathKeyStore, String passwordKeyStore, String filepathTrustStore,
+              String passwordTrustStore) {
         this.port = port;
+        this.port2 = port2;
         // this.userKeyStore = readStore(filepathKeyStore, passwordKeyStore);
         this.passwordKeyStore = passwordKeyStore;
         this.filepathKeyStore = filepathKeyStore;
+        this.passwordTrustStore = passwordTrustStore;
+        this.filepathTrustStore = filepathTrustStore;
     }
 
     // In caso si debba caricare l'intero keystore
@@ -50,7 +56,6 @@ public class MD {
 
     }
 
-
     private void addContactToContactList(PublicKey pk, ArrayList<ContactMessage> contactList) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
 
         ArrayList<byte[]> id_list;
@@ -61,8 +66,8 @@ public class MD {
         }
 
         byte[] idSender = getId(pk);
-        for (ContactMessage c: contactList){
-            if (c.verify(idSender)){
+        for (ContactMessage c : contactList) {
+            if (c.verify(idSender)) {
                 id_list.add(getId(c.pkfu1));
             } else {
                 System.out.println("MD : Communication of Fake contacts");
@@ -90,8 +95,12 @@ public class MD {
         return port;
     }
 
+    public int getPort2() {
+        return port2;
+    }
+
     // Crea un Thread che pone l'MD in continua attesa di connessioni. Dovranno essere creati un Thread per ogni contatto da comunicare.
-    public void connection_MD() {
+    public void receiveContactMd() {
         Thread startConnectionwithMD = new Thread(() -> {
             SSLServerSocket sSock;
 
@@ -99,6 +108,9 @@ public class MD {
                 // Associazione del KeyStore
                 System.setProperty("javax.net.ssl.keyStore", filepathKeyStore);
                 System.setProperty("javax.net.ssl.keyStorePassword", passwordKeyStore);
+                System.setProperty("javax.net.ssl.trustStore", filepathTrustStore);
+                System.setProperty("javax.net.ssl.trustStorePassword", passwordTrustStore);
+
 
                 // Creazione della Socket
                 SSLServerSocketFactory sockfact = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
@@ -116,16 +128,14 @@ public class MD {
                 try {
                     // Attesa Connessione
                     SSLSocket sslSock = (SSLSocket) sSock.accept();
-                    ObjectInputStream in = new ObjectInputStream(sslSock.getInputStream());
 
+                    ObjectInputStream in = new ObjectInputStream(sslSock.getInputStream());
                     // Se avviene la connessione, si prosegue con il caricamento del contatto ricevuto
                     PublicKey pkfu1 = (PublicKey) in.readObject();
                     ArrayList<ContactMessage> c = (ArrayList<ContactMessage>) in.readObject();
-
-
                     addContactToContactList(pkfu1, c);
-
                     in.close();
+
                 } catch (Exception e) {
                     e.printStackTrace();
                     System.err.println("SERVER : " + e);
@@ -135,5 +145,57 @@ public class MD {
 
         startConnectionwithMD.start();
     }
+
+    public void sendContactListMd() {
+        Thread startConnectionwithMD = new Thread(() -> {
+            SSLServerSocket sSock;
+
+            try {
+                // Associazione del KeyStore
+                System.setProperty("javax.net.ssl.keyStore", filepathKeyStore);
+                System.setProperty("javax.net.ssl.keyStorePassword", passwordKeyStore);
+
+                System.setProperty("javax.net.ssl.trustStore", filepathTrustStore);
+                System.setProperty("javax.net.ssl.trustStorePassword", passwordTrustStore);
+
+                // Creazione della Socket
+                SSLServerSocketFactory sockfact = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+                sSock = (SSLServerSocket) sockfact.createServerSocket(port2);
+                sSock.setNeedClientAuth(true);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
+            }
+
+            while (true) {
+
+                try {
+                    // Attesa Connessione
+                    SSLSocket sslSock = (SSLSocket) sSock.accept();
+
+                    //
+                    ArrayList<byte[]> id_list;
+                    try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("contact_list.server"))) {
+                        id_list = (ArrayList<byte[]>) in.readObject();
+                    } catch (Exception e) {
+                        id_list = new ArrayList<>();
+                    }
+
+                    ObjectOutputStream out = new ObjectOutputStream(sslSock.getOutputStream());
+                    out.writeObject(id_list);
+                    out.close();
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    System.err.println("SERVER : " + e);
+                }
+            }
+        });
+
+        startConnectionwithMD.start();
+
+    }
+
 
 }
