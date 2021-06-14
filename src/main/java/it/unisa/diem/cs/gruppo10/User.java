@@ -142,8 +142,7 @@ public class User implements Serializable {
     }
 
     // Genera un thread che si occupa della comunicazione dei contatti
-    // TODO generazione N thread per ognuno degli N contatti
-    public void communicatePositivity(){
+    public void communicatePositivity(int portServer){
 
         Thread startConnectionwithMD = new Thread(() -> {
             try {
@@ -169,18 +168,19 @@ public class User implements Serializable {
 
                 // Creazione Socket
                 SSLSocketFactory factory = ctx.getSocketFactory();
-                SSLSocket cSock = (SSLSocket)factory.createSocket("localhost", 4000);
+                SSLSocket cSock = (SSLSocket)factory.createSocket("localhost", portServer);
 
                 // Handshake
                 cSock.startHandshake();
 
                 // Comunicazione positività
                 ObjectOutputStream out = new ObjectOutputStream(cSock.getOutputStream());
+                out.writeObject(keyPairF.getPublic());
                 out.writeObject(contacts);
                 out.close();
                 cSock.close();
             } catch (Exception e) {
-                System.err.println("USER: " + e);
+                System.err.println( name + ": " + e);
             }
         });
         startConnectionwithMD.start();

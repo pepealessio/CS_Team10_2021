@@ -1,14 +1,8 @@
 package it.unisa.diem.cs.gruppo10;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
 import javax.net.ssl.*;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
+import java.io.*;
 import java.security.*;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.util.*;
 
@@ -20,7 +14,7 @@ public class MD {
 
     public MD(int port, String filepathKeyStore, String passwordKeyStore) {
         this.port = port;
-       // this.userKeyStore = readStore(filepathKeyStore, passwordKeyStore);
+        // this.userKeyStore = readStore(filepathKeyStore, passwordKeyStore);
         this.passwordKeyStore = passwordKeyStore;
         this.filepathKeyStore = filepathKeyStore;
     }
@@ -56,11 +50,44 @@ public class MD {
 
     }
 
-    // TODO: Aggiungere contatto alla lista
-    private void add_contact_to_contact_list(ArrayList<ContactMessage> newContact) {
-        // Scrivi nel file
-        System.out.println(newContact);
-        System.out.println("Nuovo Contatto aggiunto");
+
+    private void addContactToContactList(PublicKey pk, ArrayList<ContactMessage> contactList) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+
+        ArrayList<byte[]> id_list;
+        try (ObjectInputStream in = new ObjectInputStream(new FileInputStream("contact_list.server"))) {
+            id_list = (ArrayList<byte[]>) in.readObject();
+        } catch (Exception e) {
+            id_list = new ArrayList<>();
+        }
+
+        byte[] idSender = getId(pk);
+        for (ContactMessage c: contactList){
+            if (c.verify(idSender)){
+                id_list.add(getId(c.pkfu1));
+            } else {
+                System.out.println("MD : Communication of Fake contacts");
+                return;
+            }
+        }
+        System.out.println("MD : Communicated " + id_list.size() + " new contacts");
+
+        try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("contact_list.server"))) {
+            out.writeObject(id_list);
+        } catch (Exception ignored) {
+
+        }
+
+    }
+
+    private byte[] getId(PublicKey pk) throws NoSuchAlgorithmException {
+        byte[] pkByte = pk.getEncoded();
+        MessageDigest h = MessageDigest.getInstance("SHA256");
+        h.update(pkByte);
+        return Arrays.copyOfRange(h.digest(), 0, 16);
+    }
+
+    public int getPort() {
+        return port;
     }
 
     // Crea un Thread che pone l'MD in continua attesa di connessioni. Dovranno essere creati un Thread per ogni contatto da comunicare.
@@ -89,9 +116,14 @@ public class MD {
                     ObjectInputStream in = new ObjectInputStream(sslSock.getInputStream());
 
                     // Se avviene la connessione, si prosegue con il caricamento del contatto ricevuto
-                    add_contact_to_contact_list((ArrayList<ContactMessage>) in.readObject());
+                    PublicKey pkfu1 = (PublicKey) in.readObject();
+                    ArrayList<ContactMessage> c = (ArrayList<ContactMessage>) in.readObject();
+
+
+                    addContactToContactList(pkfu1, c);
+
                     in.close();
-                } catch (IOException | ClassNotFoundException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     System.err.println("SERVER : " + e);
                 }

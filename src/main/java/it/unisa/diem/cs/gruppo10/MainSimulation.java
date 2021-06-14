@@ -36,9 +36,11 @@ public class MainSimulation {
         // System.out.println(teresa.contacts.size() + alessio.contacts.size() + paolo.contacts.size() + luigi.contacts.size());
 
         // Teresa communicate positivity like figure 1.1 --------------------------------------------------------------
-        teresa.communicatePositivity();
+        teresa.communicatePositivity(md.getPort());
+
+        TimeUnit.SECONDS.sleep(1);
         //////////// REPLACE WITH SSL ////////////////////////////
-/*        ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("contact_list.server"));
+        /*ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("contact_list.server"));
         ArrayList<byte[]> lis = new ArrayList<>();
         lis.add(paolo.getId());
         lis.add(luigi.getId());
@@ -46,10 +48,10 @@ public class MainSimulation {
         out.close();*/
         //////////// REPLACE WITH SSL ////////////////////////////
 
-/*        // User attempts for a notify
+      // User attempts for a notify
         teresa.getNotify();
         paolo.getNotify();
         alessio.getNotify();
-        luigi.getNotify();*/
+        luigi.getNotify();
     }
 }
