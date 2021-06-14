@@ -67,18 +67,18 @@ public class MD {
     public void connection_MD() {
         Thread startConnectionwithMD = new Thread(() -> {
             SSLServerSocket sSock;
+
             try {
-                // Creazione della Socket
-                SSLServerSocketFactory sockfact = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-                sSock = (SSLServerSocket) sockfact.createServerSocket(port);
-                sSock.setEnabledProtocols(sSock.getSupportedProtocols());
-                sSock.setEnabledCipherSuites(sSock.getSupportedCipherSuites());
+                // Associazione del KeyStore
                 System.setProperty("javax.net.ssl.keyStore", filepathKeyStore);
                 System.setProperty("javax.net.ssl.keyStorePassword", passwordKeyStore);
 
+                // Creazione della Socket
+                SSLServerSocketFactory sockfact = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+                sSock = (SSLServerSocket) sockfact.createServerSocket(port);
 
             } catch (Exception e) {
-                System.out.println(e);
+                e.printStackTrace();
                 return;
             }
             while (true) {
@@ -86,14 +86,14 @@ public class MD {
                 try {
                     // Attesa Connessione
                     SSLSocket sslSock = (SSLSocket) sSock.accept();
-                    System.out.println("Indirizzo: " + sslSock.getRemoteSocketAddress());
                     ObjectInputStream in = new ObjectInputStream(sslSock.getInputStream());
 
                     // Se avviene la connessione, si prosegue con il caricamento del contatto ricevuto
                     add_contact_to_contact_list((ArrayList<ContactMessage>) in.readObject());
-
+                    in.close();
                 } catch (IOException | ClassNotFoundException e) {
                     e.printStackTrace();
+                    System.err.println("SERVER : " + e);
                 }
             }
         });

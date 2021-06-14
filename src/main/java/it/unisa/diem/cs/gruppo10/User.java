@@ -1,5 +1,6 @@
 package it.unisa.diem.cs.gruppo10;
 
+import com.sun.tools.javac.Main;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.net.ssl.*;
@@ -12,6 +13,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -50,6 +52,7 @@ public class User implements Serializable {
      */
     private final String passwordTrustStore;
 
+
     /**
      * Initialize an user, generate him PKFU and SKFU and his contact list empty.
      */
@@ -63,6 +66,7 @@ public class User implements Serializable {
         //this.userTrustStore = readStore(filepathTruststore, passwordTrustStore);
         this.filepathTrustStore = filepathTruststore;
         this.passwordTrustStore = passwordTrustStore;
+
         this.contacts = new ArrayList<>();
     }
 
@@ -138,28 +142,45 @@ public class User implements Serializable {
     }
 
     // Genera un thread che si occupa della comunicazione dei contatti
-    public void communicatePositivity() throws IOException, KeyStoreException, InterruptedException {
+    // TODO generazione N thread per ognuno degli N contatti
+    public void communicatePositivity(){
 
         Thread startConnectionwithMD = new Thread(() -> {
             try {
+
+                // Context Creation
+                SSLContext ctx = SSLContext.getInstance("TLS");
+
+                TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
+                KeyStore ts = KeyStore.getInstance("JKS");
+                char[] passTs = passwordTrustStore.toCharArray();
+                ts.load(new FileInputStream(filepathTrustStore), passTs);
+                tmf.init(ts);
+
+                /* Per aggiungere anche il KeyStore del client
+                KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+                KeyStore ks = KeyStore.getInstance("JKS");
+                char[] passKs = "ubuntu".toCharArray();
+                ks.load(new FileInputStream("trust.jks"), passKs);
+                kmf.init(ks, passKs);
+                */
+                //ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+                ctx.init(null, tmf.getTrustManagers(), null);
+
                 // Creazione Socket
-                SSLSocketFactory sockfact = (SSLSocketFactory) SSLSocketFactory.getDefault();
-                SSLSocket cSock = (SSLSocket) sockfact.createSocket("localhost", 4000);
+                SSLSocketFactory factory = ctx.getSocketFactory();
+                SSLSocket cSock = (SSLSocket)factory.createSocket("localhost", 4000);
 
-                cSock.setEnabledCipherSuites(cSock.getSupportedCipherSuites());
-                cSock.setEnabledProtocols(cSock.getSupportedProtocols());
-                // Associazione del Truststore
-                System.setProperty("javax.net.ssl.trustStore", filepathTrustStore);
-                System.setProperty("javax.net.ssl.trustStorePassword", passwordTrustStore);
-
-                System.out.println("Indirizzo: " + cSock.getRemoteSocketAddress());
+                // Handshake
                 cSock.startHandshake();
+
                 // Comunicazione positività
                 ObjectOutputStream out = new ObjectOutputStream(cSock.getOutputStream());
                 out.writeObject(contacts);
+                out.close();
                 cSock.close();
             } catch (Exception e) {
-                System.out.println(e);
+                System.err.println("USER: " + e);
             }
         });
         startConnectionwithMD.start();
