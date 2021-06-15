@@ -13,7 +13,7 @@ import java.util.Properties;
 public class HA {
     private final Properties haProperties;
     private final Properties defaultProperties;
-    private final ArrayList<byte[]> pkPositive;
+    private final ArrayList<PublicKey> pkPositive;
     private final SSLSocketFactory factoryClient;
     private final SSLServerSocketFactory factoryServer;
     private KeyPair keyPair;
@@ -46,7 +46,7 @@ public class HA {
     }
 
     public void setPositive(User u) throws Exception {
-        pkPositive.add(u.getPublicKey().getEncoded());
+        pkPositive.add(u.getPublicKey());
         System.out.println("HA: " + u.getName() + " is positive to Molecular Swab");
     }
 
@@ -64,7 +64,6 @@ public class HA {
                         SSLSocket sslSock = (SSLSocket) sSock.accept();
 
                         // Connessione con l'utente avvenuta
-                        System.out.println("HA: Connessione con l'utente avvenuta");
                         try (ObjectOutputStream out = new ObjectOutputStream(sslSock.getOutputStream());
                              ObjectInputStream in = new ObjectInputStream(sslSock.getInputStream())) {
 
@@ -75,13 +74,11 @@ public class HA {
                             byte[] commMD = requestCommitment(md, cert.getPublicKey());
 
                             // Verification of commitment
-                            if (pkPositive.stream().anyMatch(a -> Arrays.equals(a, cert.getPublicKey().getEncoded())) &&
+                            if (pkPositive.contains(cert.getPublicKey()) &&
                                     PkfCommitment.openCommit(commUser.r, cert.getPublicKey(), commUser.pkf, commUser.date, commMD)) {
                                 // Sends a new Token
-                                System.out.println("Invio Token");
                                 HAToken token = new HAToken(commUser.pkf, commUser.date, keyPair);
                                 out.writeObject(token);
-                                System.out.println("Token inviato");
                             } else {
                                 System.err.println("Commitment non valido");
                             }

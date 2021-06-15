@@ -161,7 +161,6 @@ public class User {
              ObjectInputStream in1 = new ObjectInputStream(cSock1.getInputStream())) {
             out1.writeObject(com);
             token = (HAToken) in1.readObject();
-            System.out.println(token);
         }
 
         // Chiusura comunicazione
