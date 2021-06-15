@@ -7,6 +7,7 @@ import java.io.ObjectOutputStream;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Properties;
 
 public class HA {
@@ -74,13 +75,15 @@ public class HA {
                             byte[] commMD = requestCommitment(md, cert.getPublicKey());
 
                             // Verification of commitment
-                            if (/*pkPositive.contains(cert.getPublicKey().getEncoded()) && */
-                                    PkfCommitment.openCommit(commUser.r, /* cert.getPublicKey() */ commUser.pku, commUser.pkf, commUser.date, commMD)) {
+                            if (pkPositive.stream().anyMatch(a -> Arrays.equals(a, cert.getPublicKey().getEncoded())) &&
+                                    PkfCommitment.openCommit(commUser.r, cert.getPublicKey(), commUser.pkf, commUser.date, commMD)) {
                                 // Sends a new Token
                                 System.out.println("Invio Token");
                                 HAToken token = new HAToken(commUser.pkf, commUser.date, keyPair);
                                 out.writeObject(token);
                                 System.out.println("Token inviato");
+                            } else {
+                                System.err.println("Commitment non valido");
                             }
                         }
                     } catch (Exception e) {

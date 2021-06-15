@@ -28,7 +28,7 @@ public class HAToken implements Serializable {
         System.arraycopy(pkfuByte, 0, tokenToVerify, 0, pkfuByte.length);
         System.arraycopy(dateByte, 0, tokenToVerify, pkfuByte.length, dateByte.length);
 
-        Signature signature = Signature.getInstance("SHA256withECDSA");
+        Signature signature = Signature.getInstance("SHA256withRSA");
         signature.initVerify(haPK);
         signature.update(tokenToVerify);
 

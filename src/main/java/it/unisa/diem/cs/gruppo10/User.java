@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Ths class is used to simulate an user in the CT system.
  */
-public class User implements Serializable {
+public class User {
 
     private final String name;
     private final TrustManagerFactory tmf;
@@ -117,7 +117,6 @@ public class User implements Serializable {
         byte[] r = new byte[256];
         random.nextBytes(r);
         PkfCommitment commitment = new PkfCommitment(r, keyPair.getPublic(), keyPairF.getPublic(), LocalDate.now());
-        System.out.println(PkfCommitment.openCommit(commitment.r, commitment.pku, commitment.pkf, commitment.date, commitment.c));
 
         // save commitment
         com = commitment;

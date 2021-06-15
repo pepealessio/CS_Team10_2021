@@ -96,6 +96,10 @@ public class MD {
                     // Se avviene la connessione, si prosegue con il caricamento del contatto ricevuto
                     try (ObjectInputStream in = new ObjectInputStream(sslSock.getInputStream())) {
                         HAToken token = (HAToken) in.readObject();
+                        if (!token.verifyToken()) {
+                            System.err.println("Token non valido");
+                            break;
+                        }
                         ArrayList<ContactMessage> c = (ArrayList<ContactMessage>) in.readObject();
                         addContactToContactList(token, c);
                     }

@@ -16,7 +16,6 @@ import java.util.concurrent.Semaphore;
 
 public class Util {
     public static String resourcesPath = "./src/main/resources/";
-    public static Semaphore semaphore = new Semaphore(1);
 
     public static Properties loadDefaultProperties() {
         return loadProperties("default.properties");
