@@ -5,17 +5,24 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.net.ssl.*;
 import java.io.*;
 import java.security.*;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.*;
 
 public class MD {
     private final Properties mdProperties;
+    private final Properties defaultProperties;
     private final ArrayList<byte[]> idContactMessage;
     private final TrustManagerFactory tmf;
+     final HashMap<byte[], byte[]> commitments;
     private final KeyManagerFactory kmf;
 
-    public MD() throws KeyStoreException, NoSuchAlgorithmException, UnrecoverableKeyException {
+    public MD() throws Exception {
         mdProperties = Util.loadProperties("md.properties");
+        defaultProperties = Util.loadDefaultProperties();
+
         idContactMessage = new ArrayList<>();
+        this.commitments = new HashMap<>();
 
         // Read trust store
         tmf = Util.generateTrustStoreManager(Util.resourcesPath + mdProperties.getProperty("trustStoreFile"),
@@ -24,10 +31,45 @@ public class MD {
         // Read Key Store
         kmf = Util.generateKeyStoreManager(Util.resourcesPath + mdProperties.getProperty("keyStoreFile"),
                 mdProperties.getProperty("keyStorePassword"));
+
+        receiveCommitmentMd();
         receiveContactMd();
         sendContactListMd();
 
+
         System.out.println("MD: Now I'm ready to receive authenticated contact and to send ID list. ");
+    }
+
+    private void receiveCommitmentMd() throws Exception {
+        // Defining a thread to simulate the MD server.
+        Thread receiveCommitmentThreadMd = new Thread(() -> {
+            // Creazione della Socket
+            SSLContext ctx = null;
+            try {
+                ctx = SSLContext.getInstance("TLS");
+                ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+                SSLServerSocketFactory factory = ctx.getServerSocketFactory();
+                SSLServerSocket sSock = (SSLServerSocket) factory.createServerSocket(Integer.parseInt(defaultProperties.getProperty("MDTlsSocketReceiveCommitment")));
+                sSock.setNeedClientAuth(true);
+                while (true) {
+                    // Attesa Connessione
+                    SSLSocket sslSock = (SSLSocket) sSock.accept();
+
+                    try (ObjectInputStream in = new ObjectInputStream(sslSock.getInputStream())) {
+                        byte[] newCom = (byte[]) in.readObject();
+                        X509Certificate cert = (X509Certificate) sslSock.getSession().getPeerCertificates()[0];
+                        synchronized (commitments) {
+                            commitments.put(cert.getPublicKey().getEncoded(), newCom);
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+
+        receiveCommitmentThreadMd.setDaemon(true);
+        receiveCommitmentThreadMd.start();
     }
 
     // Crea un Thread che pone l'MD in continua attesa di connessioni. Dovranno essere creati un Thread per ogni contatto da comunicare.
@@ -39,7 +81,7 @@ public class MD {
             SSLContext ctx = null;
             try {
                 ctx = SSLContext.getInstance("TLS");
-                ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+                ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
                 SSLServerSocketFactory sockFact = ctx.getServerSocketFactory();
                 SSLServerSocket sSock = (SSLServerSocket) sockFact.createServerSocket(Integer.parseInt(mdProperties.getProperty("TlsSocketReceiveContacts")));
 
@@ -73,7 +115,7 @@ public class MD {
             SSLContext ctx = null;
             try {
                 ctx = SSLContext.getInstance("TLS");
-                ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+                ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
                 SSLServerSocketFactory sockFact = ctx.getServerSocketFactory();
                 sSock = (SSLServerSocket) sockFact.createServerSocket(Integer.parseInt(mdProperties.getProperty("TlsSocketSendRiskId")));
                 sSock.setNeedClientAuth(true);

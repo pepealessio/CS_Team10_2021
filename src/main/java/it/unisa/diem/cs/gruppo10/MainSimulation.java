@@ -2,16 +2,13 @@ package it.unisa.diem.cs.gruppo10;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateException;
-import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 public class MainSimulation {
-    public static void main(String[] args) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, InterruptedException, IOException, ClassNotFoundException, KeyStoreException, CertificateException, UnrecoverableKeyException, KeyManagementException {
+    public static void main(String[] args) throws Exception {
         // Add crypto Provider
         Security.addProvider(new BouncyCastleProvider());
 
@@ -21,13 +18,17 @@ public class MainSimulation {
 
         System.out.println("\n\nSimulate phase 2.2. -----------------------\n" +
                 "User Certificate are provided externally.");
-
-        System.out.println("\n\nSimulate phase 2.3.1 -----------------------\n" +
-                "User generate PKf");
         User teresa = new User("Teresa");
         User paolo = new User("Paolo");
         User alessio = new User("Alessio");
         User luigi = new User("Luigi");
+
+        System.out.println("\n\nSimulate phase 2.3.1 -----------------------\n" +
+                "User generate PKf");
+        teresa.generateEphemeralKey();
+        paolo.generateEphemeralKey();
+        luigi.generateEphemeralKey();
+        alessio.generateEphemeralKey();
 
         System.out.println("\n\nSimulate phase 2.3.3 -----------------------\n");
         User.meet2user(teresa, paolo);

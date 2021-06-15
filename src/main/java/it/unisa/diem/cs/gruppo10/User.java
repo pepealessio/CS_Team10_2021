@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.spec.ECGenParameterSpec;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -25,7 +26,9 @@ public class User implements Serializable {
     private final TrustManagerFactory tmf;
     private final KeyManagerFactory kmf;
     private final Properties userProperties;
-    private final KeyPair keyPairF;
+    private final Properties defaultProperties;
+    private KeyPair keyPair;
+    private KeyPair keyPairF;
     List<ContactMessage> contacts;
 
 
@@ -37,19 +40,19 @@ public class User implements Serializable {
 
         // Read properties
         userProperties = Util.loadProperties("user.properties");
+        defaultProperties = Util.loadDefaultProperties();
 
         // Read trust store
         tmf = Util.generateTrustStoreManager(Util.resourcesPath + userProperties.getProperty("trustStoreFile"),
                 userProperties.getProperty("trustStorePassword"));
 
         // Read Key Store
-        kmf = Util.generateKeyStoreManager(Util.resourcesPath + userProperties.getProperty(name +".keyStoreFile"),
+        kmf = Util.generateKeyStoreManager(Util.resourcesPath + userProperties.getProperty(name + ".keyStoreFile"),
                 userProperties.getProperty(name + ".keyStorePassword"));
 
-        // Generate PKf
-        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA");
-        keyGen.initialize(new ECGenParameterSpec("secp256k1"), new SecureRandom());
-        this.keyPairF = keyGen.generateKeyPair();
+        // Read Certificated KeyPair
+        keyPair = Util.readKpFromKeyStore(Util.resourcesPath + userProperties.getProperty(name + ".keyStoreFile"),
+                userProperties.getProperty(name + ".keyStorePassword"), name);
 
         // Init empty contact List
         this.contacts = new ArrayList<>();
@@ -94,11 +97,41 @@ public class User implements Serializable {
         return Util.getIdFromPk(keyPairF.getPublic());
     }
 
+    public void generateEphemeralKey() throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, KeyManagementException {
+        // Generate PKf
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA");
+        keyGen.initialize(new ECGenParameterSpec("secp256k1"), new SecureRandom());
+        this.keyPairF = keyGen.generateKeyPair();
+
+        SecureRandom random = new SecureRandom();
+        byte[] r = new byte[256];
+        random.nextBytes(r);
+        PkfCommitment commitment = new PkfCommitment(r, keyPair.getPublic(), keyPairF.getPublic(), LocalDate.now());
+
+        // Creazione Socket
+        SSLContext ctx = SSLContext.getInstance("TLS");
+        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+        SSLSocketFactory factory = ctx.getSocketFactory();
+        try (SSLSocket cSock = (SSLSocket) factory.createSocket("localhost",
+                Integer.parseInt(defaultProperties.getProperty("MDTlsSocketReceiveCommitment")))) {
+            // Handshake
+            cSock.startHandshake();
+            try (ObjectOutputStream out = new ObjectOutputStream(cSock.getOutputStream())) {
+                out.writeObject(commitment.getCommitment());
+                TimeUnit.MILLISECONDS.sleep(500);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(7);
+        }
+    }
+
     // Genera un thread che si occupa della comunicazione dei contatti
     public void communicatePositivity() throws NoSuchAlgorithmException, KeyManagementException, IOException {
         // Context Creation
         SSLContext ctx = SSLContext.getInstance("TLS");
-        ctx.init(null, tmf.getTrustManagers(), null);
+        ctx.init(null, tmf.getTrustManagers(), new SecureRandom());
 
         // Creazione Socket
         SSLSocketFactory factory = ctx.getSocketFactory();
@@ -123,7 +156,7 @@ public class User implements Serializable {
 
         // Context Creation
         SSLContext ctx = SSLContext.getInstance("TLS");
-        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
 
         // Creazione Socket
         SSLSocketFactory factory = ctx.getSocketFactory();

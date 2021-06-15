@@ -3,10 +3,13 @@ package it.unisa.diem.cs.gruppo10;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.security.*;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Properties;
 
@@ -63,4 +66,26 @@ public class Util {
         return kmf;
     }
 
+    public static KeyPair readKpFromKeyStore(String filePath, String password, String alias) throws KeyStoreException {
+        try (FileInputStream in = new FileInputStream(filePath)) {
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            keyStore.load(in, password.toCharArray());
+
+            Key key = keyStore.getKey(alias, password.toCharArray());
+            if (key instanceof PrivateKey) {
+                // Get certificate of public key
+                X509Certificate cert = (X509Certificate) keyStore.getCertificate(alias);
+
+                // Get public key
+                PublicKey publicKey = cert.getPublicKey();
+
+                // Return a key pair
+                return new KeyPair(publicKey, (PrivateKey) key);
+            }
+            return null;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
 }
