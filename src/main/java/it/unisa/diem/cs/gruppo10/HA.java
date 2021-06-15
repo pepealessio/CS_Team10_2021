@@ -46,7 +46,7 @@ public class HA {
         getToken(md);
     }
 
-    public void setPositive(User u) throws Exception {
+    public void setPositive(User u) {
         pkPositive.add(u.getPublicKey());
         System.out.println("HA: " + u.getName() + " is positive to Molecular Swab");
     }
@@ -55,7 +55,7 @@ public class HA {
         Thread tokenRequest = new Thread(() -> {
 
             // Creazione Socket
-            SSLServerSocket sSock = null;
+            SSLServerSocket sSock;
             try {
                 sSock = (SSLServerSocket) factoryServer.createServerSocket(Integer.parseInt(defaultProperties.getProperty("HATlsSReceiveToken")));
                 sSock.setNeedClientAuth(true);
