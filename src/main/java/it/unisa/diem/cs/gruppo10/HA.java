@@ -99,6 +99,6 @@ public class HA {
     }
 
     private byte[] requestCommitment(MD md, PublicKey pku) throws Exception {
-        return md.getCommitments().get(pku.getEncoded());
+        return md.getCommitments().get(pku);
     }
 }

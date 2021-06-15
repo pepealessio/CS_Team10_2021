@@ -38,8 +38,7 @@ public class PkfCommitment implements Serializable {
 
         MessageDigest h = MessageDigest.getInstance("SHA256");
         h.update(toOpen);
-        return true;
-        // return Arrays.equals(h.digest(), c);
+        return Arrays.equals(h.digest(), c);
     }
 
     public byte[] getCommitment() {

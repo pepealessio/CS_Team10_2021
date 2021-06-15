@@ -14,7 +14,7 @@ public class MD {
     private final Properties defaultProperties;
     private final ArrayList<byte[]> idContactMessage;
     private final TrustManagerFactory tmf;
-    private final HashMap<byte[], byte[]> commitments;
+    private final HashMap<PublicKey, byte[]> commitments;
     private final KeyManagerFactory kmf;
 
     public MD() throws Exception {
@@ -40,7 +40,7 @@ public class MD {
         System.out.println("MD: Now I'm ready to receive authenticated contact and to send ID list. ");
     }
 
-    public HashMap<byte[], byte[]> getCommitments() {
+    public HashMap<PublicKey, byte[]> getCommitments() {
         return commitments;
     }
 
@@ -63,7 +63,7 @@ public class MD {
                         byte[] newCom = (byte[]) in.readObject();
                         X509Certificate cert = (X509Certificate) sslSock.getSession().getPeerCertificates()[0];
                         synchronized (commitments) {
-                            commitments.put(cert.getPublicKey().getEncoded(), newCom);
+                            commitments.put(cert.getPublicKey(), newCom);
                         }
                     }
                 }
