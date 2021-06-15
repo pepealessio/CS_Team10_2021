@@ -42,6 +42,7 @@ public class HA {
         factoryServer = ctx.getServerSocketFactory();
         factoryClient = ctx.getSocketFactory();
 
+        System.out.println("HA: now I'm ready to provide Token.");
         getToken(md);
     }
 

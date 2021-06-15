@@ -2,9 +2,7 @@ package it.unisa.diem.cs.gruppo10;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import java.io.IOException;
-import java.security.*;
-import java.security.cert.CertificateException;
+import java.security.Security;
 import java.util.concurrent.TimeUnit;
 
 public class MainSimulation {
@@ -17,15 +15,21 @@ public class MainSimulation {
         HA ha = new HA(md);
         TimeUnit.SECONDS.sleep(1);
 
-        System.out.println("\n\nSimulate phase 2.2. -----------------------\n" +
-                "User Certificate are provided externally.");
+        System.out.println("""
+
+
+                Simulate phase 2.2. -----------------------
+                User Certificate are provided externally.""");
         User teresa = new User("Teresa");
         User paolo = new User("Paolo");
         User alessio = new User("Alessio");
         User luigi = new User("Luigi");
 
-        System.out.println("\n\nSimulate phase 2.3.1 -----------------------\n" +
-                "User generate PKf");
+        System.out.println("""
+
+
+                Simulate phase 2.3.1 -----------------------
+                User generate PKf""");
         teresa.generateEphemeralKey();
         paolo.generateEphemeralKey();
         luigi.generateEphemeralKey();
@@ -37,8 +41,7 @@ public class MainSimulation {
         User.meet2user(teresa, luigi);
         User.meet2user(paolo, luigi);
 
-        System.out.println("\n\nSimulate phase 2.4-----------------------\n" +
-                "Now teresa communicate positivity");
+        System.out.println("\n\nSimulate phase 2.4-----------------------\n" );
         ha.setPositive(teresa);
         teresa.communicatePositivity();
 

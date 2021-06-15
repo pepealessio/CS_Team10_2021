@@ -3,11 +3,9 @@ package it.unisa.diem.cs.gruppo10;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.security.*;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
@@ -16,6 +14,7 @@ import java.util.concurrent.Semaphore;
 
 public class Util {
     public static String resourcesPath = "./src/main/resources/";
+    public static Semaphore semaphore = new Semaphore(1);
 
     public static Properties loadDefaultProperties() {
         return loadProperties("default.properties");

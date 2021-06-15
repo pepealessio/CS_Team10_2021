@@ -1,14 +1,12 @@
 package it.unisa.diem.cs.gruppo10;
 
-import com.sun.tools.javac.Main;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-
 import javax.net.ssl.*;
-import java.io.*;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.*;
-import java.security.cert.CertificateException;
 import java.security.spec.ECGenParameterSpec;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -27,7 +25,7 @@ public class User {
     private final KeyManagerFactory kmf;
     private final Properties userProperties;
     private final Properties defaultProperties;
-    private KeyPair keyPair;
+    private final KeyPair keyPair;
     private KeyPair keyPairF;
     private PkfCommitment com;
     List<ContactMessage> contacts;
@@ -36,7 +34,7 @@ public class User {
     /**
      * Initialize an user, generate him PKFU and SKFU and his contact list empty.
      */
-    public User(String name) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, KeyStoreException, UnrecoverableKeyException {
+    public User(String name) throws NoSuchAlgorithmException, KeyStoreException, UnrecoverableKeyException {
         this.name = name;
 
         // Read properties
@@ -63,12 +61,13 @@ public class User {
      * This method use two thread to simulate a contact exchange between two user.
      */
     public static void meet2user(User u1, User u2) throws InterruptedException {
-        System.out.println(u1.name + " -> " + u2.name);
+        System.out.println(u1.name + " -> " + u2.name + " and " + u2.name + " -> " + u1.name);
 
         Thread u1tou2 = new Thread(() -> {
             try {
+                Util.semaphore.acquire();
                 u1.receiveContact();
-                TimeUnit.MILLISECONDS.sleep(100);
+                Util.semaphore.release();
                 u1.sendContact(u2);
             } catch (Exception ignored) {
             }
@@ -77,7 +76,9 @@ public class User {
         Thread u2tou1 = new Thread(() -> {
             try {
                 u2.sendContact(u1);
+                Util.semaphore.acquire();
                 u2.receiveContact();
+                Util.semaphore.release();
             } catch (Exception ignored) {
             }
         });
@@ -143,6 +144,10 @@ public class User {
 
     // Genera un thread che si occupa della comunicazione dei contatti
     public void communicatePositivity() throws Exception {
+        System.out.println(name + ": I'm communicating my contacts because I'm positive!");
+
+        System.out.println(name + ": Now I require a Token to HA");
+
         HAToken token = null;
 
         // Context Creation
@@ -167,6 +172,7 @@ public class User {
         cSock1.close();
 
         // ----------------------- Now send contact to MD ------------------------------------------------
+        System.out.println(name + ": Now I send my contact to MD with my token");
         // Context Creation
         SSLContext ctx2 = SSLContext.getInstance("TLS");
         ctx2.init(null, tmf.getTrustManagers(), new SecureRandom());
