@@ -14,6 +14,7 @@ public class MainSimulation {
 
         System.out.println("\n\nSimulate phase 2.1. -----------------------\n");
         MD md = new MD();
+        HA ha = new HA(md);
         TimeUnit.SECONDS.sleep(1);
 
         System.out.println("\n\nSimulate phase 2.2. -----------------------\n" +
@@ -38,6 +39,7 @@ public class MainSimulation {
 
         System.out.println("\n\nSimulate phase 2.4-----------------------\n" +
                 "Now teresa communicate positivity");
+        ha.setPositive(teresa);
         teresa.communicatePositivity();
 
         System.out.println("\n\nSimulate phase 2.5 -----------------------\n");

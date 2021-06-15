@@ -2,10 +2,11 @@ package it.unisa.diem.cs.gruppo10;
 
 import org.apache.commons.lang3.SerializationUtils;
 
+import java.io.Serializable;
 import java.security.*;
 import java.time.LocalDate;
 
-public class HAToken {
+public class HAToken implements Serializable {
     public final PublicKey pkfu;
     public final LocalDate date;
     byte[] haSign;
@@ -42,7 +43,7 @@ public class HAToken {
         System.arraycopy(pkfuByte, 0, tokenToSign, 0, pkfuByte.length);
         System.arraycopy(dateByte, 0, tokenToSign, pkfuByte.length, dateByte.length);
 
-        Signature signature = Signature.getInstance("SHA256withECDSA");
+        Signature signature = Signature.getInstance("SHA256withRSA");
         signature.initSign(haSK, new SecureRandom());
         signature.update(tokenToSign);
 

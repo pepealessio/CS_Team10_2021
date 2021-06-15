@@ -12,9 +12,11 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.concurrent.Semaphore;
 
 public class Util {
     public static String resourcesPath = "./src/main/resources/";
+    public static Semaphore semaphore = new Semaphore(1);
 
     public static Properties loadDefaultProperties() {
         return loadProperties("default.properties");

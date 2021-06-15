@@ -14,7 +14,7 @@ public class MD {
     private final Properties defaultProperties;
     private final ArrayList<byte[]> idContactMessage;
     private final TrustManagerFactory tmf;
-     final HashMap<byte[], byte[]> commitments;
+    private final HashMap<byte[], byte[]> commitments;
     private final KeyManagerFactory kmf;
 
     public MD() throws Exception {
@@ -38,6 +38,10 @@ public class MD {
 
 
         System.out.println("MD: Now I'm ready to receive authenticated contact and to send ID list. ");
+    }
+
+    public HashMap<byte[], byte[]> getCommitments() {
+        return commitments;
     }
 
     private void receiveCommitmentMd() throws Exception {
@@ -91,9 +95,9 @@ public class MD {
 
                     // Se avviene la connessione, si prosegue con il caricamento del contatto ricevuto
                     try (ObjectInputStream in = new ObjectInputStream(sslSock.getInputStream())) {
-                        PublicKey pkfu1 = (PublicKey) in.readObject();
+                        HAToken token = (HAToken) in.readObject();
                         ArrayList<ContactMessage> c = (ArrayList<ContactMessage>) in.readObject();
-                        addContactToContactList(pkfu1, c);
+                        addContactToContactList(token, c);
                     }
                 }
             } catch (IOException | ClassNotFoundException | NoSuchAlgorithmException | SignatureException | InvalidKeyException | KeyManagementException e) {
@@ -138,7 +142,6 @@ public class MD {
                 }
             } catch (IOException e) {
                 e.printStackTrace();
-                return;
             }
 
         });
@@ -147,14 +150,14 @@ public class MD {
         sendContactThreadMd.start();
     }
 
-    private synchronized void addContactToContactList(PublicKey pk, ArrayList<ContactMessage> contactList) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+    private synchronized void addContactToContactList(HAToken token, ArrayList<ContactMessage> contactList) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         // Get ID from token
-        byte[] idSender = Util.getIdFromPk(pk);
+        byte[] idSender = Util.getIdFromPk(token.pkfu);
 
         // Verify Contact as 2.4 phase
         ArrayList<byte[]> newIdContactMessage = new ArrayList<>();
         for (ContactMessage c : contactList) {
-            if (c.verify(idSender)) {
+            if (c.verify(idSender) && token.date.equals(c.tsNow.toLocalDate())) {
                 newIdContactMessage.add(Util.getIdFromPk(c.pkfu1));
             } else {
                 System.out.println("MD : Communication of Fake contacts");

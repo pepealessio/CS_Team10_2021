@@ -29,6 +29,7 @@ public class User implements Serializable {
     private final Properties defaultProperties;
     private KeyPair keyPair;
     private KeyPair keyPairF;
+    private PkfCommitment com;
     List<ContactMessage> contacts;
 
 
@@ -97,8 +98,17 @@ public class User implements Serializable {
         return Util.getIdFromPk(keyPairF.getPublic());
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public PublicKey getPublicKey() {
+        return keyPair.getPublic();
+    }
+
     public void generateEphemeralKey() throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, KeyManagementException {
         // Generate PKf
+        System.out.println(name + ": I'm generating a ephemeral key.");
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA");
         keyGen.initialize(new ECGenParameterSpec("secp256k1"), new SecureRandom());
         this.keyPairF = keyGen.generateKeyPair();
@@ -107,8 +117,13 @@ public class User implements Serializable {
         byte[] r = new byte[256];
         random.nextBytes(r);
         PkfCommitment commitment = new PkfCommitment(r, keyPair.getPublic(), keyPairF.getPublic(), LocalDate.now());
+        System.out.println(PkfCommitment.openCommit(commitment.r, commitment.pku, commitment.pkf, commitment.date, commitment.c));
+
+        // save commitment
+        com = commitment;
 
         // Creazione Socket
+        System.out.println(name + ": Now I'm committing the ephemeral key.");
         SSLContext ctx = SSLContext.getInstance("TLS");
         ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
         SSLSocketFactory factory = ctx.getSocketFactory();
@@ -128,26 +143,51 @@ public class User implements Serializable {
     }
 
     // Genera un thread che si occupa della comunicazione dei contatti
-    public void communicatePositivity() throws NoSuchAlgorithmException, KeyManagementException, IOException {
+    public void communicatePositivity() throws Exception {
+        HAToken token = null;
+
         // Context Creation
-        SSLContext ctx = SSLContext.getInstance("TLS");
-        ctx.init(null, tmf.getTrustManagers(), new SecureRandom());
+        SSLContext ctx1 = SSLContext.getInstance("TLS");
+        ctx1.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
 
         // Creazione Socket
-        SSLSocketFactory factory = ctx.getSocketFactory();
-        SSLSocket cSock = (SSLSocket) factory.createSocket("localhost", Integer.parseInt(userProperties.getProperty("MDTlsSocketReceiveContacts")));
+        SSLSocketFactory factory1 = ctx1.getSocketFactory();
+        SSLSocket cSock1 = (SSLSocket) factory1.createSocket("localhost", Integer.parseInt(defaultProperties.getProperty("HATlsSReceiveToken")));
 
         // Handshake
-        cSock.startHandshake();
+        cSock1.startHandshake();
 
         // Comunicazione positività
-        try (ObjectOutputStream out = new ObjectOutputStream(cSock.getOutputStream())) {
-            out.writeObject(keyPairF.getPublic());
-            out.writeObject(contacts);
+        try (ObjectOutputStream out1 = new ObjectOutputStream(cSock1.getOutputStream());
+             ObjectInputStream in1 = new ObjectInputStream(cSock1.getInputStream())) {
+            out1.writeObject(com);
+            token = (HAToken) in1.readObject();
+            System.out.println(token);
         }
 
         // Chiusura comunicazione
-        cSock.close();
+        cSock1.close();
+
+        // ----------------------- Now send contact to MD ------------------------------------------------
+        // Context Creation
+        SSLContext ctx2 = SSLContext.getInstance("TLS");
+        ctx2.init(null, tmf.getTrustManagers(), new SecureRandom());
+
+        // Creazione Socket
+        SSLSocketFactory factory2 = ctx2.getSocketFactory();
+        SSLSocket cSock2 = (SSLSocket) factory2.createSocket("localhost", Integer.parseInt(userProperties.getProperty("MDTlsSocketReceiveContacts")));
+
+        // Handshake
+        cSock2.startHandshake();
+
+        // Comunicazione positività
+        try (ObjectOutputStream out2 = new ObjectOutputStream(cSock2.getOutputStream())) {
+            out2.writeObject(token);
+            out2.writeObject(contacts);
+        }
+
+        // Chiusura comunicazione
+        cSock2.close();
     }
 
     public void getNotify() throws NoSuchAlgorithmException, IOException, ClassNotFoundException, KeyManagementException {
