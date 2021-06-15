@@ -148,7 +148,7 @@ public class User {
 
         System.out.println(name + ": Now I require a Token to HA");
 
-        HAToken token = null;
+        HAToken token;
 
         // Context Creation
         SSLContext ctx1 = SSLContext.getInstance("TLS");
