@@ -46,9 +46,22 @@ public class MainSimulation {
         teresa.communicatePositivity();
 
         System.out.println("\n\nSimulate phase 2.5 -----------------------\n");
-        teresa.getNotify();
-        paolo.getNotify();
-        alessio.getNotify();
-        luigi.getNotify();
+        byte[] id;
+        id = teresa.getNotify();
+        if (id != null) {
+            teresa.bookSwab(id);
+        }
+        id = paolo.getNotify();
+        if (id != null) {
+            paolo.bookSwab(id);
+        }
+        id = alessio.getNotify();
+        if (id != null) {
+            alessio.bookSwab(id);
+        }
+        id = luigi.getNotify();
+        if (id != null) {
+            luigi.bookSwab(id);
+        }
     }
 }

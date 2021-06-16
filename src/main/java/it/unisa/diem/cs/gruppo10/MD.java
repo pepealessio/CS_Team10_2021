@@ -6,22 +6,27 @@ import javax.net.ssl.*;
 import java.io.*;
 import java.security.*;
 import java.security.cert.X509Certificate;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class MD {
     private class DateId {
-        LocalDateTime date;
+        LocalDateTime dateTime;
         byte[] id;
 
         public DateId(byte[] id) {
             this.id = id;
-            date = LocalDateTime.now();
+            dateTime = LocalDateTime.now();
         }
 
         public byte[] getId() {
             return id;
+        }
+
+        public LocalDateTime getDateTime() {
+            return dateTime;
         }
     }
 
@@ -59,8 +64,17 @@ public class MD {
         return commitments;
     }
 
-    private List<byte[]> getIds () {
+    private List<byte[]> getIds() {
         return idContactMessage.stream().map(MD.DateId::getId).collect(Collectors.toList());
+    }
+
+    public LocalDateTime getDateTimeOfCommunicatedID(byte[] id) {
+        for (DateId di : idContactMessage) {
+            if(Arrays.equals(di.getId(), id)) {
+                return di.getDateTime();
+            }
+        }
+        return null;
     }
 
     private void receiveCommitmentMd() {

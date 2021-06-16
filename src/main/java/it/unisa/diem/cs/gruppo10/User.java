@@ -9,10 +9,7 @@ import java.net.Socket;
 import java.security.*;
 import java.security.spec.ECGenParameterSpec;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -189,7 +186,7 @@ public class User {
         cSock2.close();
     }
 
-    public void getNotify() throws NoSuchAlgorithmException, IOException, ClassNotFoundException, KeyManagementException {
+    public byte[] getNotify() throws NoSuchAlgorithmException, IOException, ClassNotFoundException, KeyManagementException {
         // Obtain current ID
         byte[] id = getId();
 
@@ -217,11 +214,36 @@ public class User {
         for (byte[] c : idList) {
             if (Arrays.equals(id, c)) {
                 System.out.println(name + ": I've received a exposition notify.");
-                return;
+                return c;
             }
         }
+        return null;
     }
 
+    public void bookSwab(byte[] id) throws Exception{
+        // manda all'HA il commitment per semplificare
+        System.out.println(name + ": Now I book a swab because I had a contact");
+
+        // Context Creation
+        SSLContext ctx = SSLContext.getInstance("TLS");
+        ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+
+        // Creazione Socket
+        SSLSocketFactory factory = ctx.getSocketFactory();
+        SSLSocket cSock = (SSLSocket) factory.createSocket("localhost", Integer.parseInt(defaultProperties.getProperty("HATlsBookSwab")));
+
+        // Handshake
+        cSock.startHandshake();
+
+        // Comunicazione positività
+        try (ObjectOutputStream out = new ObjectOutputStream(cSock.getOutputStream())) {
+            out.writeObject(com);
+        }
+        TimeUnit.MILLISECONDS.sleep(500);
+
+        // Chiusura comunicazione
+        cSock.close();
+    }
 
     private void sendContact(User u2) throws IOException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         // SIMULATE PAIRING ------------------------------------------------------------------

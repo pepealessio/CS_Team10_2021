@@ -1,5 +1,8 @@
 package it.unisa.diem.cs.gruppo10;
 
+import javax.naming.InvalidNameException;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.TrustManagerFactory;
 import java.io.FileInputStream;
@@ -9,6 +12,7 @@ import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Properties;
 
 public class Util {
@@ -85,5 +89,11 @@ public class Util {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public static List<Rdn> getIdentityByCertificate(X509Certificate cert) throws InvalidNameException {
+        String dn = cert.getIssuerX500Principal().getName();
+        LdapName ldapDN = new LdapName(dn);
+        return ldapDN.getRdns();
     }
 }
