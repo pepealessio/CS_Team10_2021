@@ -5,7 +5,6 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import javax.net.ssl.*;
 import java.io.*;
 import java.security.*;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.*;
 
@@ -44,11 +43,11 @@ public class MD {
         return commitments;
     }
 
-    private void receiveCommitmentMd() throws Exception {
+    private void receiveCommitmentMd() {
         // Defining a thread to simulate the MD server.
         Thread receiveCommitmentThreadMd = new Thread(() -> {
             // Creazione della Socket
-            SSLContext ctx = null;
+            SSLContext ctx;
             try {
                 ctx = SSLContext.getInstance("TLS");
                 ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
@@ -82,7 +81,7 @@ public class MD {
         // Defining a thread to simulate the MD server.
         Thread receiveContactThreadMd = new Thread(() -> {
             // Creazione della Socket
-            SSLContext ctx = null;
+            SSLContext ctx;
             try {
                 ctx = SSLContext.getInstance("TLS");
                 ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
@@ -120,7 +119,7 @@ public class MD {
             Security.addProvider(new BouncyCastleProvider());
 
             SSLServerSocket sSock;
-            SSLContext ctx = null;
+            SSLContext ctx;
             try {
                 ctx = SSLContext.getInstance("TLS");
                 ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());

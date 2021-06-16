@@ -10,7 +10,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Properties;
-import java.util.concurrent.Semaphore;
 
 public class Util {
     public static String resourcesPath = "./src/main/resources/";
@@ -65,7 +64,7 @@ public class Util {
         return kmf;
     }
 
-    public static KeyPair readKpFromKeyStore(String filePath, String password, String alias) throws KeyStoreException {
+    public static KeyPair readKpFromKeyStore(String filePath, String password, String alias){
         try (FileInputStream in = new FileInputStream(filePath)) {
             KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
             keyStore.load(in, password.toCharArray());
