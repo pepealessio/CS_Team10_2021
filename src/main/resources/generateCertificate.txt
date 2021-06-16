@@ -1,0 +1,44 @@
+mkdir ./MDFiles
+mkdir ./HAFiles
+mkdir ./PublicFiles
+mkdir ./UserFiles
+mkdir ./UserFiles/Alessio
+mkdir ./UserFiles/Paolo
+mkdir ./UserFiles/Teresa
+mkdir ./UserFiles/Luigi
+
+sudo keytool -genkey -noprompt -trustcacerts -keyalg RSA -keysize 4096 -alias MD -dname "cn=localhost,ou=MD,o=Government,c=CL" -keypass MDPassword -keystore ./MDFiles/MDKey.jks -storepass MDPassword
+
+sudo keytool -genkey -noprompt -trustcacerts -keyalg RSA -keysize 4096 -alias HA -dname "cn=localhost, ou=HA, o=Sanity, c=CL" -keypass HAPassword -keystore ./HAFiles/HAKey.jks -storepass HAPassword
+
+sudo keytool -export -alias MD -storepass MDPassword -file ./MDFiles/MDCer.cer -keystore ./MDFiles/MDKey.jks
+
+sudo keytool -export -alias HA -storepass HAPassword -file ./HAFiles/HACer.cer -keystore ./HAFiles/HAKey.jks
+
+sudo keytool -import -noprompt -v -trustcacerts -alias MDCert -keystore ./PublicFiles/PublicTrust.jks -file ./MDFiles/MDCer.cer -keypass MDPassword -storepass PublicPassword
+
+sudo keytool -import -noprompt -v -trustcacerts -alias HACert -keystore ./PublicFiles/PublicTrust.jks -file ./HAFiles/HACer.cer -keypass HAPassword -storepass PublicPassword
+
+sudo keytool -import -noprompt -v -trustcacerts -alias HACert -keystore ./MDFiles/MDTrust.jks -file ./HAFiles/HACer.cer -keypass HAPassword -storepass MDPassword
+
+sudo keytool -import -noprompt -v -trustcacerts -alias MDCert -keystore ./HAFiles/HATrust.jks -file ./MDFiles/MDCer.cer -keypass MDPassword -storepass HAPassword
+
+sudo keytool -genkey -noprompt -trustcacerts -keyalg RSA -keysize 4096 -alias Alessio -dname "cn=localhost, ou=Alessio, o=Citizen, c=CL" -keypass AlessioPassword -keystore ./UserFiles/Alessio/AlessioKey.jks -storepass AlessioPassword
+sudo keytool -export -alias Alessio -storepass AlessioPassword -file ./UserFiles/Alessio/AlessioCer.cer -keystore ./UserFiles/Alessio/AlessioKey.jks
+sudo keytool -import -noprompt -v -trustcacerts -alias AlessioCer -keystore ./HAFiles/HATrust.jks -file ./UserFiles/Alessio/AlessioCer.cer -keypass AlessioPassword -storepass HAPassword
+sudo keytool -import -noprompt -v -trustcacerts -alias AlessioCer -keystore ./MDFiles/MDTrust.jks -file ./UserFiles/Alessio/AlessioCer.cer -keypass AlessioPassword -storepass MDPassword
+
+sudo keytool -genkey -noprompt -trustcacerts -keyalg RSA -keysize 4096 -alias Paolo -dname "cn=localhost, ou=Paolo, o=Citizen, c=CL" -keypass PaoloPassword -keystore ./UserFiles/Paolo/PaoloKey.jks -storepass PaoloPassword
+sudo keytool -export -alias Paolo -storepass PaoloPassword -file ./UserFiles/Paolo/PaoloCer.cer -keystore ./UserFiles/Paolo/PaoloKey.jks
+sudo keytool -import -noprompt -v -trustcacerts -alias PaoloCer -keystore ./HAFiles/HATrust.jks -file ./UserFiles/Paolo/PaoloCer.cer -keypass PaoloPassword -storepass HAPassword
+sudo keytool -import -noprompt -v -trustcacerts -alias PaoloCer -keystore ./MDFiles/MDTrust.jks -file ./UserFiles/Paolo/PaoloCer.cer -keypass PaoloPassword -storepass MDPassword
+
+sudo keytool -genkey -noprompt -trustcacerts -keyalg RSA -keysize 4096 -alias Teresa -dname "cn=localhost, ou=Teresa, o=Citizen, c=CL" -keypass TeresaPassword -keystore ./UserFiles/Teresa/TeresaKey.jks -storepass TeresaPassword
+sudo keytool -export -alias Teresa -storepass TeresaPassword -file ./UserFiles/Teresa/TeresaCer.cer -keystore ./UserFiles/Teresa/TeresaKey.jks
+sudo keytool -import -noprompt -v -trustcacerts -alias TeresaCer -keystore ./HAFiles/HATrust.jks -file ./UserFiles/Teresa/TeresaCer.cer -keypass TeresaPassword -storepass HAPassword
+sudo keytool -import -noprompt -v -trustcacerts -alias TeresaCer -keystore ./MDFiles/MDTrust.jks -file ./UserFiles/Teresa/TeresaCer.cer -keypass TeresaPassword -storepass MDPassword
+
+sudo keytool -genkey -noprompt -trustcacerts -keyalg RSA -keysize 4096 -alias Luigi -dname "cn=localhost, ou=Luigi, o=Citizen, c=CL" -keypass LuigiPassword -keystore ./UserFiles/Luigi/LuigiKey.jks -storepass LuigiPassword
+sudo keytool -export -alias Luigi -storepass LuigiPassword -file ./UserFiles/Luigi/LuigiCer.cer -keystore ./UserFiles/Luigi/LuigiKey.jks
+sudo keytool -import -noprompt -v -trustcacerts -alias LuigiCer -keystore ./HAFiles/HATrust.jks -file ./UserFiles/Luigi/LuigiCer.cer -keypass LuigiPassword -storepass HAPassword
+sudo keytool -import -noprompt -v -trustcacerts -alias LuigiCer -keystore ./MDFiles/MDTrust.jks -file ./UserFiles/Luigi/LuigiCer.cer -keypass LuigiPassword -storepass MDPassword

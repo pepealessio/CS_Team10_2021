@@ -187,6 +187,8 @@ public class User {
     }
 
     public byte[] getNotify() throws NoSuchAlgorithmException, IOException, ClassNotFoundException, KeyManagementException {
+        System.out.println("\n" + name + ": Now I check for notify");
+
         // Obtain current ID
         byte[] id = getId();
 
@@ -239,7 +241,7 @@ public class User {
         try (ObjectOutputStream out = new ObjectOutputStream(cSock.getOutputStream())) {
             out.writeObject(com);
         }
-        TimeUnit.MILLISECONDS.sleep(500);
+        TimeUnit.MILLISECONDS.sleep(2000);
 
         // Chiusura comunicazione
         cSock.close();

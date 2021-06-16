@@ -44,6 +44,7 @@ public class MainSimulation {
         System.out.println("\n\nSimulate phase 2.4-----------------------\n" );
         ha.setPositive(teresa);
         teresa.communicatePositivity();
+        TimeUnit.SECONDS.sleep(1);
 
         System.out.println("\n\nSimulate phase 2.5 -----------------------\n");
         byte[] id;

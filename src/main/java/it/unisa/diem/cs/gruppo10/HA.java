@@ -1,8 +1,6 @@
 
 package it.unisa.diem.cs.gruppo10;
 
-import javax.naming.ldap.LdapName;
-import javax.naming.ldap.Rdn;
 import javax.net.ssl.*;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -11,7 +9,6 @@ import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Properties;
 
 public class HA {
@@ -127,9 +124,9 @@ public class HA {
                             if (PkfCommitment.openCommit(commUser.r, cert.getPublicKey(), commUser.pkf, commUser.date, commMD)
                                     && dtPositivity != null) {
                                 if (dtPositivity.plus(1, ChronoUnit.DAYS).isAfter(LocalDateTime.now())) {
-                                    System.out.println("HA: booked a swab to " + Util.getIdentityByCertificate(cert).get(1) + " for free");
+                                    System.out.println("HA: booked a swab to " + Util.getIdentityByCertificate(cert).get(2) + " for free");
                                 } else {
-                                    System.out.println("HA: booked a swab to " + Util.getIdentityByCertificate(cert).get(1) + " for 0.003BTC");
+                                    System.out.println("HA: booked a swab to " + Util.getIdentityByCertificate(cert).get(2) + " for 0.003BTC");
                                 }
                             } else {
                                 System.err.println("Commitment o data non validi");
