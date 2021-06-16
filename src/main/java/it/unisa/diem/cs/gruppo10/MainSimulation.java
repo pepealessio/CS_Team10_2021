@@ -11,6 +11,7 @@ public class MainSimulation {
         Security.addProvider(new BouncyCastleProvider());
 
         System.out.println("\n\nSimulate phase 2.1. -----------------------\n");
+
         MD md = new MD();
         HA ha = new HA(md);
         TimeUnit.SECONDS.sleep(1);
