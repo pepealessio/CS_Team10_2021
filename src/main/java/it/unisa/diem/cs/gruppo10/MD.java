@@ -6,12 +6,28 @@ import javax.net.ssl.*;
 import java.io.*;
 import java.security.*;
 import java.security.cert.X509Certificate;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class MD {
+    private class DateId {
+        LocalDateTime date;
+        byte[] id;
+
+        public DateId(byte[] id) {
+            this.id = id;
+            date = LocalDateTime.now();
+        }
+
+        public byte[] getId() {
+            return id;
+        }
+    }
+
     private final Properties mdProperties;
     private final Properties defaultProperties;
-    private final ArrayList<byte[]> idContactMessage;
+    private final ArrayList<DateId> idContactMessage;
     private final TrustManagerFactory tmf;
     private final HashMap<PublicKey, byte[]> commitments;
     private final KeyManagerFactory kmf;
@@ -41,6 +57,10 @@ public class MD {
 
     public HashMap<PublicKey, byte[]> getCommitments() {
         return commitments;
+    }
+
+    private List<byte[]> getIds () {
+        return idContactMessage.stream().map(MD.DateId::getId).collect(Collectors.toList());
     }
 
     private void receiveCommitmentMd() {
@@ -86,7 +106,7 @@ public class MD {
                 ctx = SSLContext.getInstance("TLS");
                 ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
                 SSLServerSocketFactory sockFact = ctx.getServerSocketFactory();
-                SSLServerSocket sSock = (SSLServerSocket) sockFact.createServerSocket(Integer.parseInt(mdProperties.getProperty("TlsSocketReceiveContacts")));
+                SSLServerSocket sSock = (SSLServerSocket) sockFact.createServerSocket(Integer.parseInt(defaultProperties.getProperty("MDTlsSocketReceiveContacts")));
 
                 while (true) {
                     // Attesa Connessione
@@ -124,7 +144,7 @@ public class MD {
                 ctx = SSLContext.getInstance("TLS");
                 ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
                 SSLServerSocketFactory sockFact = ctx.getServerSocketFactory();
-                sSock = (SSLServerSocket) sockFact.createServerSocket(Integer.parseInt(mdProperties.getProperty("TlsSocketSendRiskId")));
+                sSock = (SSLServerSocket) sockFact.createServerSocket(Integer.parseInt(defaultProperties.getProperty("MDTlsSocketSendRiskId")));
                 sSock.setNeedClientAuth(true);
 
             } catch (Exception e) {
@@ -139,7 +159,7 @@ public class MD {
 
                     try (ObjectOutputStream out = new ObjectOutputStream(sslSock.getOutputStream())) {
                         synchronized (idContactMessage) {
-                            out.writeObject(idContactMessage);
+                            out.writeObject(getIds());
                         }
                     }
                 }
@@ -158,10 +178,10 @@ public class MD {
         byte[] idSender = Util.getIdFromPk(token.pkfu);
 
         // Verify Contact as 2.4 phase
-        ArrayList<byte[]> newIdContactMessage = new ArrayList<>();
+        ArrayList<DateId> newIdContactMessage = new ArrayList<>();
         for (ContactMessage c : contactList) {
             if (c.verify(idSender) && token.date.equals(c.tsNow.toLocalDate())) {
-                newIdContactMessage.add(Util.getIdFromPk(c.pkfu1));
+                newIdContactMessage.add(new DateId(Util.getIdFromPk(c.pkfu1)));
             } else {
                 System.out.println("MD : Communication of Fake contacts");
                 return;

@@ -32,7 +32,7 @@ public class User {
 
 
     /**
-     * Initialize an user, generate him PKFU and SKFU and his contact list empty.
+     * Initialize an user.
      */
     public User(String name) throws NoSuchAlgorithmException, KeyStoreException, UnrecoverableKeyException {
         this.name = name;
@@ -174,7 +174,7 @@ public class User {
 
         // Creazione Socket
         SSLSocketFactory factory2 = ctx2.getSocketFactory();
-        SSLSocket cSock2 = (SSLSocket) factory2.createSocket("localhost", Integer.parseInt(userProperties.getProperty("MDTlsSocketReceiveContacts")));
+        SSLSocket cSock2 = (SSLSocket) factory2.createSocket("localhost", Integer.parseInt(defaultProperties.getProperty("MDTlsSocketReceiveContacts")));
 
         // Handshake
         cSock2.startHandshake();
@@ -199,7 +199,7 @@ public class User {
 
         // Creazione Socket
         SSLSocketFactory factory = ctx.getSocketFactory();
-        SSLSocket cSock = (SSLSocket) factory.createSocket("localhost", Integer.parseInt(userProperties.getProperty("MDTlsSocketSendRiskId")));
+        SSLSocket cSock = (SSLSocket) factory.createSocket("localhost", Integer.parseInt(defaultProperties.getProperty("MDTlsSocketSendRiskId")));
 
         // Handshake
         cSock.startHandshake();
@@ -221,6 +221,7 @@ public class User {
             }
         }
     }
+
 
     private void sendContact(User u2) throws IOException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         // SIMULATE PAIRING ------------------------------------------------------------------
