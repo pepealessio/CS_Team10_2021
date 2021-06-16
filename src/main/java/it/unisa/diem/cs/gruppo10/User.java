@@ -65,10 +65,7 @@ public class User {
 
         Thread u1tou2 = new Thread(() -> {
             try {
-                Util.semaphore.acquire();
-                u1.receiveContact();
-                Util.semaphore.release();
-                u1.sendContact(u2);
+                u1.receiveContact(u2);
             } catch (Exception ignored) {
             }
         });
@@ -76,10 +73,8 @@ public class User {
         Thread u2tou1 = new Thread(() -> {
             try {
                 u2.sendContact(u1);
-                Util.semaphore.acquire();
-                u2.receiveContact();
-                Util.semaphore.release();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
 
@@ -231,22 +226,35 @@ public class User {
         // SIMULATE PAIRING ------------------------------------------------------------------
         // Start u1 socket as pair BT request
         try (Socket clientSocket = new Socket("localhost", Integer.parseInt(userProperties.getProperty("BTSimulatePort")))) {
-            try (ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream())) {
+            try (ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream());
+                 ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream())) {
 
                 // Now we simulate contact exchange ----------------------------------------------------
                 // User 1 send message to user 2 as (2.6)
                 ContactMessage c1to2 = new ContactMessage(keyPairF, u2.getId());
                 out.writeObject(c1to2);
+
+                ContactMessage c2to1 = (ContactMessage) in.readObject();
+                if (c2to1.verifyBTPair(getId())) {
+                    System.out.println(name + ": I've added a contact");
+                    contacts.add(c2to1);
+                } else {
+                    // If verify not have success
+                    System.out.println(name + ": I've REJECTED a contact");
+                }
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
             }
         }
     }
 
-    private void receiveContact() throws IOException, ClassNotFoundException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+    private void receiveContact(User u1) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         // SIMULATE PAIRING ------------------------------------------------------------------
         // Start u2 socket as pair BT accepting
         try (ServerSocket serverSocket = new ServerSocket(Integer.parseInt(userProperties.getProperty("BTSimulatePort")))) {
             try (Socket clientSocket = serverSocket.accept()) {
-                try (ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream())) {
+                try (ObjectInputStream in = new ObjectInputStream(clientSocket.getInputStream());
+                     ObjectOutputStream out = new ObjectOutputStream(clientSocket.getOutputStream())) {
 
                     // Now we simulate contact exchange ----------------------------------------------------
                     // Receive from u1
@@ -258,6 +266,9 @@ public class User {
                         // If verify not have success
                         System.out.println(name + ": I've REJECTED a contact");
                     }
+
+                    ContactMessage c2to1 = new ContactMessage(keyPairF, u1.getId());
+                    out.writeObject(c2to1);
                 }
             }
         }
