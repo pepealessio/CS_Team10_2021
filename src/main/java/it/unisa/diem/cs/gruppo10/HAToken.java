@@ -7,21 +7,21 @@ import java.security.*;
 import java.time.LocalDate;
 
 public class HAToken implements Serializable {
-    public final PublicKey pkfu;
+    public final PublicKey pkFu;
     public final LocalDate date;
     byte[] haSign;
 
     public final PublicKey haPK;
 
-    public HAToken(PublicKey pkfu, LocalDate date, KeyPair haK) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
-        this.pkfu = pkfu;
+    public HAToken(PublicKey pkFu, LocalDate date, KeyPair haK) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
+        this.pkFu = pkFu;
         this.date = date;
         haPK = haK.getPublic();
         signToken(haK.getPrivate());
     }
 
     public boolean verifyToken() throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        byte[] pkfuByte = pkfu.getEncoded();
+        byte[] pkfuByte = pkFu.getEncoded();
         byte[] dateByte = SerializationUtils.serialize(date);
 
         byte[] tokenToVerify = new byte[pkfuByte.length + dateByte.length];
@@ -36,7 +36,7 @@ public class HAToken implements Serializable {
     }
 
     private void signToken(PrivateKey haSK) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
-        byte[] pkfuByte = pkfu.getEncoded();
+        byte[] pkfuByte = pkFu.getEncoded();
         byte[] dateByte = SerializationUtils.serialize(date);
 
         byte[] tokenToSign = new byte[pkfuByte.length + dateByte.length];

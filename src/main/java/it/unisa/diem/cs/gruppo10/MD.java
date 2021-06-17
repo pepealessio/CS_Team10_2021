@@ -5,7 +5,6 @@ import java.io.*;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -237,7 +236,7 @@ public class MD {
      */
     private synchronized void addContactToContactList(HAToken token, ArrayList<ContactMessage> contactList) throws NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         // Get ID from token
-        byte[] idSender = Util.getIdFromPk(token.pkfu);
+        byte[] idSender = Util.getIdFromPk(token.pkFu);
 
         // Verification of Contacts as described in 2.4 phase
         ArrayList<DateId> newIdContactMessage = new ArrayList<>();

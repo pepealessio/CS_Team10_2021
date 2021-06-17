@@ -14,7 +14,7 @@ public class PkfCommitment implements Serializable {
     public final PublicKey pku;
     public final PublicKey pkf;
     public final LocalDate date;
-    public byte[] c;
+    public byte[] com;
 
     public PkfCommitment(byte[] r, PublicKey pku, PublicKey pkf, LocalDate date) throws NoSuchAlgorithmException {
         this.r = r;
@@ -42,7 +42,7 @@ public class PkfCommitment implements Serializable {
     }
 
     public byte[] getCommitment() {
-        return c;
+        return com;
     }
 
     private void generateCommitment() throws NoSuchAlgorithmException {
@@ -58,6 +58,6 @@ public class PkfCommitment implements Serializable {
 
         MessageDigest h = MessageDigest.getInstance("SHA256");
         h.update(toCommit);
-        c = h.digest();
+        com = h.digest();
     }
 }
