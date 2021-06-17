@@ -178,6 +178,10 @@ public class User {
         // Closing communication
         cSock1.close();
 
+        if (token == null) {
+            return;
+        }
+
         // ----------------------- Now sends contact to MD ------------------------------------------------
         System.out.println(name + ": Now I send my contact to MD with my token");
         // SSLContext creation with KeyStore Managers, TrustStore Managers and a source of randomness
@@ -241,6 +245,7 @@ public class User {
                 return true;
             }
         }
+        System.out.println(name + ": I've NOT received an exposition notification.");
         return false;
     }
 

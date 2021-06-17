@@ -92,6 +92,7 @@ public class HA {
 
                             // Simulation of the connection to the MD to get the commitment
                             byte[] commMD = requestCommitment(md, cert.getPublicKey());
+                            // commMD[4] = 0xF;
 
                             // Verification of commitment
                             if (pkPositive.contains(cert.getPublicKey()) &&
@@ -101,6 +102,7 @@ public class HA {
                                 out.writeObject(token);
                             } else {
                                 System.err.println("Not a Valid Commitment");
+                                out.writeObject(null);
                             }
                         }
                     } catch (Exception e) {
@@ -165,7 +167,7 @@ public class HA {
                                 if (dtPositivity.plus(1, ChronoUnit.DAYS).isAfter(LocalDateTime.now())) {
                                     System.out.println("HA: booked a swab to " + Util.getIdentityByCertificate(cert).get(2) + " for free");
                                 } else {
-                                    System.out.println("HA: booked a swab to " + Util.getIdentityByCertificate(cert).get(2) + " for 0.003BTC");
+                                    System.out.println("HA: booked a swab to " + Util.getIdentityByCertificate(cert).get(2) + " for 0.001BTC");
                                 }
                             } else {
                                 System.err.println("Not valid commitment or data");
