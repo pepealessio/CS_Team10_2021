@@ -52,6 +52,8 @@ public class User {
 
         // Init empty contact List
         this.contacts = new ArrayList<>();
+
+        System.out.println("Hello, I'm " + name + " and now I'm an user of the CT system.");
     }
 
     /**
@@ -99,6 +101,11 @@ public class User {
         return keyPair.getPublic();
     }
 
+    /**
+     * Described in 4.3.1
+     * Method used to generate the KeyPair described in (2.2). In this method a TLS connection with the MD server is
+     * also established to commit the key
+     */
     public void generateEphemeralKey() throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, KeyManagementException {
         // Generate PKf
         System.out.println(name + ": I'm generating a ephemeral key.");
@@ -106,23 +113,27 @@ public class User {
         keyGen.initialize(new ECGenParameterSpec("secp256k1"), new SecureRandom());
         this.keyPairF = keyGen.generateKeyPair();
 
+
         SecureRandom random = new SecureRandom();
         byte[] r = new byte[256];
         random.nextBytes(r);
         PkfCommitment commitment = new PkfCommitment(r, keyPair.getPublic(), keyPairF.getPublic(), LocalDate.now());
 
-        // save commitment
+        // Save commitment
         com = commitment;
 
-        // Creazione Socket
+        // SSLContext creation with KeyStore Managers, TrustStore Managers and a source of randomness
         System.out.println(name + ": Now I'm committing the ephemeral key.");
         SSLContext ctx = SSLContext.getInstance("TLS");
         ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
+
+        // Instantiation of the SSLSocket
         SSLSocketFactory factory = ctx.getSocketFactory();
         try (SSLSocket cSock = (SSLSocket) factory.createSocket("localhost",
                 Integer.parseInt(defaultProperties.getProperty("MDTlsSocketReceiveCommitment")))) {
-            // Handshake
+            // Handshake request to start the connection
             cSock.startHandshake();
+            // Opening of a Stream for the communication with server
             try (ObjectOutputStream out = new ObjectOutputStream(cSock.getOutputStream())) {
                 out.writeObject(commitment.getCommitment());
                 TimeUnit.MILLISECONDS.sleep(500);
@@ -130,123 +141,150 @@ public class User {
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(7);
+            System.exit(1);
         }
     }
 
-    // Genera un thread che si occupa della comunicazione dei contatti
+    /**
+     * Described in 4.4.2 and 4.4.3
+     * This method establishes a TLS connection with the HA Server to request an HAToken related to the pk sent.
+     * Upon receiving it, the token is provided to the MD in another TLS connection, and eventually all the contacts
+     * are communicated to the MD
+     */
     public void communicatePositivity() throws Exception {
         System.out.println(name + ": I'm communicating my contacts because I'm positive!");
-
         System.out.println(name + ": Now I require a Token to HA");
 
         HAToken token;
-
-        // Context Creation
+        // SSLContext creation with KeyStore Managers, TrustStore Managers and a source of randomness
         SSLContext ctx1 = SSLContext.getInstance("TLS");
         ctx1.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
 
-        // Creazione Socket
+        // Instantiation of the SSLSocket
         SSLSocketFactory factory1 = ctx1.getSocketFactory();
         SSLSocket cSock1 = (SSLSocket) factory1.createSocket("localhost", Integer.parseInt(defaultProperties.getProperty("HATlsSReceiveToken")));
 
-        // Handshake
+        // Handshake request to start the connection
         cSock1.startHandshake();
 
-        // Comunicazione positività
+        // Opening of a Stream for the communication with the server
         try (ObjectOutputStream out1 = new ObjectOutputStream(cSock1.getOutputStream());
              ObjectInputStream in1 = new ObjectInputStream(cSock1.getInputStream())) {
+            // Communication of the commitment and  receipt of the related token
             out1.writeObject(com);
             token = (HAToken) in1.readObject();
         }
 
-        // Chiusura comunicazione
+        // Closing communication
         cSock1.close();
 
-        // ----------------------- Now send contact to MD ------------------------------------------------
+        if (token == null) {
+            return;
+        }
+
+        // ----------------------- Now sends contact to MD ------------------------------------------------
         System.out.println(name + ": Now I send my contact to MD with my token");
-        // Context Creation
+        // SSLContext creation with KeyStore Managers, TrustStore Managers and a source of randomness
         SSLContext ctx2 = SSLContext.getInstance("TLS");
         ctx2.init(null, tmf.getTrustManagers(), new SecureRandom());
 
-        // Creazione Socket
+        // Instantiation of the SSLSocket
         SSLSocketFactory factory2 = ctx2.getSocketFactory();
         SSLSocket cSock2 = (SSLSocket) factory2.createSocket("localhost", Integer.parseInt(defaultProperties.getProperty("MDTlsSocketReceiveContacts")));
 
-        // Handshake
+        // Handshake request to start the communication
         cSock2.startHandshake();
 
-        // Comunicazione positività
+        // Opening of a Stream for the connection with server
         try (ObjectOutputStream out2 = new ObjectOutputStream(cSock2.getOutputStream())) {
+            // the token is sent to be authorized in sending the contacts
             out2.writeObject(token);
             out2.writeObject(contacts);
         }
 
-        // Chiusura comunicazione
+        // Closing communication
         cSock2.close();
     }
 
-    public byte[] getNotify() throws NoSuchAlgorithmException, IOException, ClassNotFoundException, KeyManagementException {
+    /**
+     * Described in 4.5.1
+     * This method establishes a TLS connection with the MD Server to download the list of all the IDs at risk and check
+     * if the user's ID is present among these.
+     */
+    public boolean getNotify() throws NoSuchAlgorithmException, IOException, ClassNotFoundException, KeyManagementException {
         System.out.println("\n" + name + ": Now I check for notify");
 
         // Obtain current ID
         byte[] id = getId();
 
-        // Context Creation
+        // SSLContext creation with KeyStore Managers, TrustStore Managers and a source of randomness
         SSLContext ctx = SSLContext.getInstance("TLS");
         ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
 
-        // Creazione Socket
+        // Instantiation of the SSLSocket
         SSLSocketFactory factory = ctx.getSocketFactory();
         SSLSocket cSock = (SSLSocket) factory.createSocket("localhost", Integer.parseInt(defaultProperties.getProperty("MDTlsSocketSendRiskId")));
 
-        // Handshake
+        // Handshake request to start the connection
         cSock.startHandshake();
 
-        // Lettura Positività
         ArrayList<byte[]> idList;
+        // Opening of a Stream for the communication with the server
         try (ObjectInputStream in = new ObjectInputStream(cSock.getInputStream())) {
+            // Download of the list od IDs at risk
             idList = (ArrayList<byte[]>) in.readObject();
         }
 
-        // Chiusura comunicazione
+        // Closing communication
         cSock.close();
 
-        // Check my ID presence
+        // Check if my ID if present among the IDs at risk
         for (byte[] c : idList) {
             if (Arrays.equals(id, c)) {
-                System.out.println(name + ": I've received a exposition notify.");
-                return c;
+                System.out.println(name + ": I've received an exposition notification.");
+                return true;
             }
         }
-        return null;
+        System.out.println(name + ": I've NOT received an exposition notification.");
+        return false;
     }
 
-    public void bookSwab(byte[] id) throws Exception{
-        // manda all'HA il commitment per semplificare
-        System.out.println(name + ": Now I book a swab because I had a contact");
+    /**
+     * Described in 4.5.2
+     * This method establishes a TLS connection with the HA Server. If the ID passed as input is present among the risk
+     * contact, it books a swab. This will be free only if the request took place less then 24h after the reception of
+     * the risk notification.
+     */
+    public void bookSwab() throws Exception {
 
-        // Context Creation
+        System.out.println(name + ": I want to book a swab because I had a contact");
+
+        // SSLContext creation with KeyStore Managers, TrustStore Managers and a source of randomness
         SSLContext ctx = SSLContext.getInstance("TLS");
         ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), new SecureRandom());
 
-        // Creazione Socket
+        // Instantiation of the SSLSocket
         SSLSocketFactory factory = ctx.getSocketFactory();
         SSLSocket cSock = (SSLSocket) factory.createSocket("localhost", Integer.parseInt(defaultProperties.getProperty("HATlsBookSwab")));
 
-        // Handshake
+        // Handshake request to start the connection
         cSock.startHandshake();
 
-        // Comunicazione positività
+        // Opening of a Stream for the communication with server
         try (ObjectOutputStream out = new ObjectOutputStream(cSock.getOutputStream())) {
+            // Sending the ID received from the notification
             out.writeObject(com);
+            TimeUnit.MILLISECONDS.sleep(2000);
         }
-        TimeUnit.MILLISECONDS.sleep(2000);
 
-        // Chiusura comunicazione
+        // Closing communication
         cSock.close();
     }
 
+    /**
+     * Described in 4.3.2
+     * Simulation of sending part of a Bluetooth pairing
+     */
     private void sendContact(User u2) throws IOException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         // SIMULATE PAIRING ------------------------------------------------------------------
         // Start u1 socket as pair BT request
@@ -273,6 +311,10 @@ public class User {
         }
     }
 
+    /**
+     * Described in 4.3.2
+     * Simulation of receiving part of a Bluetooth pairing
+     */
     private void receiveContact(User u1) throws IOException, ClassNotFoundException, NoSuchAlgorithmException, SignatureException, InvalidKeyException {
         // SIMULATE PAIRING ------------------------------------------------------------------
         // Start u2 socket as pair BT accepting

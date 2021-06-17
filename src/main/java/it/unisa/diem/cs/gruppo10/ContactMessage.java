@@ -39,6 +39,7 @@ public class ContactMessage implements Serializable {
         signature.update(messageToSignByte);
 
         sigBytes = signature.sign();
+        // sigBytes[4] = 0x03;
     }
 
     public boolean verify(byte[] idByte) throws NoSuchAlgorithmException, InvalidKeyException, SignatureException {
