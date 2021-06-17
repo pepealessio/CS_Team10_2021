@@ -48,22 +48,18 @@ public class MainSimulation {
         TimeUnit.SECONDS.sleep(1);
 
         System.out.println("\n\nSimulate phase 2.5 -----------------------\n");
-        byte[] id;
-        id = teresa.getNotify();
-        if (id != null) {
-            teresa.bookSwab(id);
+
+        if (teresa.getNotify()) {
+            teresa.bookSwab();
         }
-        id = paolo.getNotify();
-        if (id != null) {
-            paolo.bookSwab(id);
+        if (paolo.getNotify()) {
+            paolo.bookSwab();
         }
-        id = alessio.getNotify();
-        if (id != null) {
-            alessio.bookSwab(id);
+        if (luigi.getNotify()) {
+            luigi.bookSwab();
         }
-        id = luigi.getNotify();
-        if (id != null) {
-            luigi.bookSwab(id);
+        if (alessio.getNotify()) {
+            alessio.bookSwab();
         }
     }
 }

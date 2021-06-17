@@ -52,6 +52,8 @@ public class User {
 
         // Init empty contact List
         this.contacts = new ArrayList<>();
+
+        System.out.println("Hello, I'm " + name + " and now I'm an user of the CT system.");
     }
 
     /**
@@ -205,7 +207,7 @@ public class User {
      * This method establishes a TLS connection with the MD Server to download the list of all the IDs at risk and check
      * if the user's ID is present among these.
      */
-    public byte[] getNotify() throws NoSuchAlgorithmException, IOException, ClassNotFoundException, KeyManagementException {
+    public boolean getNotify() throws NoSuchAlgorithmException, IOException, ClassNotFoundException, KeyManagementException {
         System.out.println("\n" + name + ": Now I check for notify");
 
         // Obtain current ID
@@ -236,10 +238,10 @@ public class User {
         for (byte[] c : idList) {
             if (Arrays.equals(id, c)) {
                 System.out.println(name + ": I've received an exposition notification.");
-                return c;
+                return true;
             }
         }
-        return null;
+        return false;
     }
 
     /**
@@ -248,7 +250,7 @@ public class User {
      * contact, it books a swab. This will be free only if the request took place less then 24h after the reception of
      * the risk notification.
      */
-    public void bookSwab(byte[] id) throws Exception {
+    public void bookSwab() throws Exception {
 
         System.out.println(name + ": I want to book a swab because I had a contact");
 
