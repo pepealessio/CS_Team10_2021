@@ -187,9 +187,8 @@ public class HA {
     }
 
     /**
-     * This method simulates the connection between the HA and the MD, a connection which is not present due to
-     * simplification of the implementation. Through this connection, the HA requests to the MD the commitment related
-     * to the public key passed as input.
+     * This method simulates the HA's access to the commitments' database.
+     *
      *
      * @param md  - the MD to connect with
      * @param pku - the public key of the user whom commitment is requested
